@@ -1,6 +1,5 @@
 import networkx as nx
-
-filters = ["A", "B", "C", "D"]
+from string import digits
 
 # params:       -filters:
 #                   list of filters for the given category
@@ -25,48 +24,58 @@ def recursiveGraph(G, root, S, t):
         else:
             string = s + str(t)
         G.add_node(string)
-        G.add_edge(root, string)
+        G.add_edge(root, string, weight=0)
         Snew = S.copy()
         Snew.remove(s)
         recursiveGraph(G, string, Snew, t)
     return G
 
-
 # params:       -graph:
-#                   list of source strings
-#               -initial:
+#                  
+#               -root:
 #                   reference string
+#               -h:
+#                 history of answers
+#               -alpha:
+#                 alpha parameter for tuning  
 #
-# returns:      -score:
-#                   score of the optimal alignment
-def dijsktra_old(graph, initial):
-  visited = {initial: 0}
-  path = {}
+# returns:      -graph:
+#                   with weights
+def setWeights(G, root, h, alpha):
+  A = G.neighbors(root)
+  while True:
+      try:
+          # get the next item
+          n = next(A)
+          remove_digits = str.maketrans('', '', digits)
+          questions = s.translate(remove_digits)
+          questions.split(" ") #array of questions made
 
-  nodes = set(graph.nodes)
+          #possible answers for last question [a1, a2, a3]
+          last_q = questions[-1]
+          ans = answers(last_q)
+          w0 = 0
+          for a in ans:
+            w0 = w0 + len(product(a,h)) / len(product(h))    #PRODUCT(a) returns all the products given the selected answers
 
-  while nodes: 
-    min_node = None
-    for node in nodes:
-      if node in visited:
-        if min_node is None:
-          min_node = node
-        elif visited[node] < visited[min_node]:
-          min_node = node
+          w = (1/len(ans))*w0 + alpha*(users(h) / users(last_q, h)).  #USERS(q,h) returns the number of users that answered h and use q
+          G[root][n]['weight'] = w
+          # do something with element
+      except StopIteration:
+          # if StopIteration is raised, break from loop
+          break
+  return G
 
-    if min_node is None:
-      break
+def dijsktra(graph, initial):
+  return nx.dijkstra_path(graph,0,4)
 
-    nodes.remove(min_node)
-    current_weight = visited[min_node]
 
-    for edge in graph.edges[min_node]:
-      weight = current_weight + graph.distance[(min_node, edge)]
-      if edge not in visited or weight < visited[edge]:
-        visited[edge] = weight
-        path[edge] = min_node
 
-  return visited, path
+#TESTING
+filters = ["A", "B", "C"]
+G = createGraph(filters)
+nx.draw(G, with_labels = True)
+nx.get_node_attributes(G,'products')
+G.node["A1"]
 
-  def dijsktra(graph, initial):
-  	return nx.dijkstra_path(graph,0,4)
+
