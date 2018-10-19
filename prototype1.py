@@ -1,28 +1,34 @@
 import networkx as nx
 
+filters = ["A", "B", "C", "D"]
+
 # params:       -filters:
 #                   list of filters for the given category
 #
 # returns:      -graph:
 #                   complete initialized graph
 def createGraph(filters):
-	ind = 0
-	G = nx.Graph()
-	#create the root
-	G.add_node(0, filter=None)
-	recursiveGraph(G, 0, filters)
-	return G
+  ind = 0
+  G = nx.Graph()
+  #create the root
+  G.add_node(0)
+  recursiveGraph(G, 0, filters, 0)
+  return G
 
 # G.edges[3, 4]['weight'] = 4.2 to set different weight
 
-def recursiveGraph(G, root, S):
-	ind = root + 1
-  	for s in S:
-    	G.add_node(ind, filter=s)
-    	G.add_edge(root, ind)
-    	Snew = S.copy()
-    	recursiveGraph(G, ind, Snew.remove(s))
-    	ind + 1
+def recursiveGraph(G, root, S, t):
+    t = t+1
+    for s in S:
+        if root != 0:
+            string = str(root) + " " + s + str(t)
+        else:
+            string = s + str(t)
+        G.add_node(string)
+        G.add_edge(root, string)
+        Snew = S.copy()
+        Snew.remove(s)
+        recursiveGraph(G, string, Snew, t)
     return G
 
 
