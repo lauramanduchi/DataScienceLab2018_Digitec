@@ -1,0 +1,18 @@
+strict digraph "" {
+	ROOT;
+	A1 -> "A1 B2"	 [weight=0];
+	A1 -> "A1 C2"	 [weight=0];
+	0 -> A1	 [weight=0];
+	0 -> B1	 [weight=0];
+	0 -> C1	 [weight=0];
+	"A1 B2" -> "A1 B2 C3"	 [weight=0];
+	"A1 C2" -> "A1 C2 B3"	 [weight=0];
+	B1 -> "B1 A2"	 [weight=0];
+	B1 -> "B1 C2"	 [weight=0];
+	"B1 A2" -> "B1 A2 C3"	 [weight=0];
+	"B1 C2" -> "B1 C2 A3"	 [weight=0];
+	C1 -> "C1 A2"	 [weight=0];
+	C1 -> "C1 B2"	 [weight=0];
+	"C1 A2" -> "C1 A2 B3"	 [weight=0];
+	"C1 B2" -> "C1 B2 A3"	 [weight=0];
+}
