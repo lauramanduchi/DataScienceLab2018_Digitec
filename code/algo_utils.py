@@ -3,7 +3,7 @@
 import pandas as pd
 import numpy as np 
 
-def select_subset(product_df, traffic_cat,  question, answer):
+def select_subset(product_df, traffic_cat, purchased_cat, question, answer):
     """
     function assumes you have already build the answer column
     
@@ -18,7 +18,8 @@ def select_subset(product_df, traffic_cat,  question, answer):
         products_to_keep = product_df.loc[total, "ProductId"].drop_duplicates().values          
         product_df = product_df.loc[product_df["ProductId"].isin(products_to_keep),]
         traffic_cat = traffic_cat.loc[traffic_cat["Items_ProductId"].isin(products_to_keep),]
-        return(product_df, traffic_cat)
+        purchased_cat = purchased_cat.loc[purchased_cat["Items_ProductId"].isin(products_to_keep),]
+        return(product_df, traffic_cat, purchased_cat)
 
 
 
@@ -86,5 +87,24 @@ def get_proba_Q_distribution(question, products_cat, traffic_processed, alpha=1)
     distribution["final_proba"] = distribution["final_proba"]/S
     return(distribution)
 
-    def sample_from_distribution_df(dist_df, size=1):
+def sample_from_distribution_df(dist_df, size=1):
     return(np.random.choice(dist_df.index.values, size=1, p=dist_df["final_proba"].values))
+
+def get_questions(product_set):
+    return(product_set["PropertyDefinitionId"].drop_duplicates().values)
+
+def get_answers_y(y, product_set):
+    questions = get_questions(product_set)
+    tmp = product_set.loc[product_set["ProductId"]==y,]
+    res = {}
+    for q in questions:
+        a = tmp.loc[product_set["PropertyDefinitionId"]==q,"answer"].values
+        if len(a)==0:
+            res.update({q: 'idk'})
+        else:
+            res.update({q: a[0]})
+    return(res)
+
+def get_filters_remaining(dataset):
+    return(dataset["PropertyDefinitionId"].drop_duplicates().values)
+    
