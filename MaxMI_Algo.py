@@ -7,11 +7,6 @@ NOTE: Must get functions from notebook!
 import random
 import numpy as np
 import pandas as pd
-from networkx.drawing.nx_agraph import write_dot, graphviz_layout
-
-import matplotlib
-import matplotlib.pyplot as plt
-from prototype1 import *
 from utils import *
 
 
@@ -109,46 +104,3 @@ print(df['ProductId'].nunique())
 
 # Get question set (from mel's Get filters code)
 filters_def_dict.keys()
-
-product_set = df.iloc[1:]
-print("Product set: {}".format(product_set))
-print("Test1: {}".format(product_set['ProductId']))
-print("Test2: {}".format(product_set['ProductId'].value_counts(normalize=True).get(6337059)))
-# for y in product_set:
-#     print("y in product set: {}".format(y))
-# print("MI: {}".format(mutual_inf(question_set, product_set)))
-MI_matrix = mutual_info_matrix(question_set, product_set)
-print("MI matrix: {}".format(MI_matrix))
-print("argmax MI: {}".format(np.argmax(MI_matrix, axis=0)[1]))
-print("next question: {}".format(MI_matrix[np.argmax(MI_matrix, axis=0)[1]][0]))
-next_question_index = MI_matrix[np.argmax(MI_matrix, axis=0)[1]][0]
-next_question= MI_matrix[next_question_index][0]
-print(next_question)
-print("new question set: {}".format(question_set.remove(next_question)))
-print("question_set: {}".format(len(question_set)))
-
-
-print(question_set[1:3])
-filters = question_set[1:3]
-G = createGraph(filters)
-G = sub_tree_from_currentnode(G, 0)
-plt.title('Question Tree')
-pos = graphviz_layout(G, prog='dot')
-nx.draw(G, pos, with_labels=True, arrows=True)
-print(G.nodes())
-
-print([x for x in G.nodes() if x!=0 and len(x)==2])
-print([x[-1:] for x in G.nodes() if x!=0 and len(x)==4])
-
-print(min([x for x in G.nodes() if x!=0], key=len))
-print(len(min([x for x in G.nodes() if x!=0], key=len)))
-print(type(max([x for x in G.nodes() if x!=0])))
-print('ADCB'[-1:])
-print(len(max([x for x in G.nodes() if x!=0], key=len)))
-# print(len(list(G.successors('Q1'))))
-# for next_question in (list(G.successors('Q1'))):
-#     print(next_question)
-
-plt.show()
-
-
