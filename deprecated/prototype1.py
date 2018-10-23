@@ -9,7 +9,7 @@ import numoy as np
 #                   complete initialized graph
 def createGraph(filters):
   ind = 0
-  G = nx.Graph()
+  G = nx.DiGraph()
   #create the root
   G.add_node(0)
   recursiveGraph(G, 0, filters, 0)
@@ -21,9 +21,9 @@ def recursiveGraph(G, root, S, t):
     t = t+1
     for s in S:
         if root != 0:
-            string = str(root) + " " + s + str(t)
+            string = str(root) + " " + s
         else:
-            string = s + str(t)
+            string = s
         G.add_node(string)
         G.add_edge(root, string, weight=0)
         Snew = S.copy()
@@ -74,10 +74,10 @@ def dijsktra(graph, initial):
 
 
 #TESTING
-filters = ["A", "B", "C"]
-G = createGraph(filters)
-nx.draw(G, with_labels = True)
-nx.get_node_attributes(G,'products')
-G.node["A1"]
+# filters = ["A", "B", "C"]
+# G = createGraph(filters)
+# nx.draw(G, with_labels = True)
+# nx.get_node_attributes(G,'products')
+# G.node["A"]
 
 
