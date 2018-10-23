@@ -9,7 +9,6 @@ from parser import parse_query_string
 from data_utils import batch, keep_only_useful_URLs
 from build_answers_utils import create_categories, eliminate_filters_no_answers, map_origAnswer_newAnswer, process_all_traffic_answers
 
-
 def init_df():
     # ------------------- DATABASE SETUP ------------- #
     # initialize connection to the machine
@@ -105,3 +104,4 @@ def init_df():
     traffic_cat = process_all_traffic_answers(traffic_cat, purchased_cat, filters_def_dict, type_filters)
 
     return products_cat, traffic_cat
+
