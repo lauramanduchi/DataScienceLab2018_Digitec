@@ -1,5 +1,6 @@
 import networkx as nx
 from string import digits
+import numoy as np
 
 # params:       -filters:
 #                   list of filters for the given category
@@ -41,6 +42,7 @@ def recursiveGraph(G, root, S, t):
 #
 # returns:      -graph:
 #                   with weights
+#   WE WANT TO FOLLOW THE MAX WEIGHT
 def setWeights(G, root, h, alpha):
   A = G.neighbors(root)
   while True:
@@ -56,9 +58,9 @@ def setWeights(G, root, h, alpha):
           ans = answers(last_q)
           w0 = 0
           for a in ans:
-            w0 = w0 + len(product(a,h)) / len(product(h))    #PRODUCT(a) returns all the products given the selected answers
+            w0 = w0 + np.log(len(product(a,h)))    #PRODUCT(a) returns all the products given the selected answers
 
-          w = (1/len(ans))*w0 + alpha*(users(h) / users(last_q, h))  #USERS(q,h) returns the number of users that answered h and use q
+          w = - w0 + np.log(len(product(h))) + alpha*(users(h) / users(last_q, h)).  #USERS(q,h) returns the number of users that answered h and use q
           G[root][n]['weight'] = w
           # do something with element
       except StopIteration:
