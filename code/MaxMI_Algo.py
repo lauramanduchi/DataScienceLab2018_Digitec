@@ -7,14 +7,15 @@ NOTE: Must get functions from notebook!
 import random
 import numpy as np
 import pandas as pd
-from utils import *
-from init_dataframe import init_df
+#from utils import *
+from init_dataframes import init_df
 import algo_utils
 
 
 '''Normalized (# products given answer/total # products given question)'''
 def prob_answer(answer, question, product_set, traffic_set):
     p_answer = algo_utils.get_proba_Q_distribution(question, product_set, traffic_set, alpha=1) #Mel function name
+    print("p_answer: ", p_answer)
     return p_answer.loc[answer]["final_proba"]
 
 
@@ -88,11 +89,20 @@ def max_info_algorithm(product_set, traffic_set, threshold, y):
     return final_question_list, product_set, y
 
 
-
-'''Testing'''
+#Download the data first!
+'''
+from init_dataframes import init_df
+import pandas as pd
 products_cat, traffic_cat = init_df()
-y = products_cat
+products_cat.to_pickle("../data/products_table.pkl")
+traffic_cat.to_pickle("../data/traffic_table.pkl")
+'''
+
+products_cat = pd.read_pickle("../data/products_table.pkl")
+traffic_cat = pd.read_pickle("../data/traffic_table.pkl")
+
+y = products_cat["ProductId"][10]
 threshold = 50
-final_question_list, product_set, y = max_info_algorithm(product_cat, traffic_cat, threshold, y)
+final_question_list, product_set, y = max_info_algorithm(products_cat, traffic_cat, threshold, y)
 print("final_question_list: ", final_question_list)
 print("length final product set: ", len(product_set))

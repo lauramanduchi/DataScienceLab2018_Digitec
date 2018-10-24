@@ -3,7 +3,7 @@
 import pandas as pd
 import numpy as np 
 
-def select_subset(product_df, traffic_cat, purchased_cat, question, answer):
+def select_subset(product_df, traffic_cat, question, answer, purchased_cat = 0):
     """
     function assumes you have already build the answer column
     
@@ -18,8 +18,11 @@ def select_subset(product_df, traffic_cat, purchased_cat, question, answer):
         products_to_keep = product_df.loc[total, "ProductId"].drop_duplicates().values          
         product_df = product_df.loc[product_df["ProductId"].isin(products_to_keep),]
         traffic_cat = traffic_cat.loc[traffic_cat["Items_ProductId"].isin(products_to_keep),]
-        purchased_cat = purchased_cat.loc[purchased_cat["Items_ProductId"].isin(products_to_keep),]
-        return(product_df, traffic_cat, purchased_cat)
+        if purchased_cat != 0:
+            purchased_cat = purchased_cat.loc[purchased_cat["Items_ProductId"].isin(products_to_keep),]
+            return(product_df, traffic_cat, purchased_cat)
+        else:
+            return(product_df, traffic_cat)
 
 
 
@@ -85,6 +88,7 @@ def get_proba_Q_distribution(question, products_cat, traffic_processed, alpha=1)
     distribution["final_proba"] = distribution["history_proba"].values + alpha*distribution["catalog_proba"].values
     S = np.sum(distribution["final_proba"].values)
     distribution["final_proba"] = distribution["final_proba"]/S
+    print("get_proba_Q_distribution: ", distribution)
     return(distribution)
 
 def sample_from_distribution_df(dist_df, size=1):
