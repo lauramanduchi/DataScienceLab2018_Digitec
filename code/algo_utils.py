@@ -3,28 +3,26 @@
 import pandas as pd
 import numpy as np 
 
-def select_subset(product_df, traffic_cat, question, answer, purchased_cat = 0):
+def select_subset(product_set, traffic_set, question, answer, purchased_set = []):
     """
     function assumes you have already build the answer column
     
     enter the string corresponding to question number and to answer number
     """
     if answer=='idk': # case i don't know the answer return everything
-        return(product_df, traffic_cat)
+        return(product_set, traffic_set)
     else:
-        q_keep = set(product_df.loc[product_df["PropertyDefinitionId"]==float(question), "ProductId"].drop_duplicates().index.values)
-        a_keep = set(product_df.loc[product_df["answer"]==float(answer), "ProductId"].drop_duplicates().index.values)
+        q_keep = set(product_set.loc[product_set["PropertyDefinitionId"]==float(question), "ProductId"].drop_duplicates().index.values)
+        a_keep = set(product_set.loc[product_set["answer"]==float(answer), "ProductId"].drop_duplicates().index.values)
         total = a_keep.intersection(q_keep)
-        products_to_keep = product_df.loc[total, "ProductId"].drop_duplicates().values          
-        product_df = product_df.loc[product_df["ProductId"].isin(products_to_keep),]
-        traffic_cat = traffic_cat.loc[traffic_cat["Items_ProductId"].isin(products_to_keep),]
-        if purchased_cat != 0:
-            purchased_cat = purchased_cat.loc[purchased_cat["Items_ProductId"].isin(products_to_keep),]
-            return(product_df, traffic_cat, purchased_cat)
+        products_to_keep = product_set.loc[total, "ProductId"].drop_duplicates().values          
+        product_set = product_set.loc[product_set["ProductId"].isin(products_to_keep),]
+        traffic_set = traffic_set.loc[traffic_set["Items_ProductId"].isin(products_to_keep),]
+        if len(purchased_set) != 0:
+            purchased_set = purchased_set.loc[purchased_set["Items_ProductId"].isin(products_to_keep),]
+            return(product_set, traffic_set, purchased_set)
         else:
-            return(product_df, traffic_cat)
-
-
+            return(product_set, traffic_set)
 
 def get_proba_Y_distribution(products_cat, purchased_cat, alpha=1):
     distribution = pd.DataFrame()
@@ -86,7 +84,13 @@ def get_proba_Q_distribution(question, products_cat, traffic_processed, alpha=1)
     distribution["final_proba"] = distribution["history_proba"].values + alpha*distribution["catalog_proba"].values
     S = np.sum(distribution["final_proba"].values)
     distribution["final_proba"] = distribution["final_proba"]/S
-    print("get_proba_Q_distribution: ", distribution)
+    
+    with open('../data/probabilities.txt', 'a+') as f:
+        f.write("get_proba_Q_distribution: ")
+        f.write("\n")
+        distribution.to_csv(f, header=True)
+        f.write("\n")
+
     return(distribution)
 
 def sample_from_distribution_df(dist_df, size=1):

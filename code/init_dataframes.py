@@ -103,5 +103,5 @@ def init_df():
     products_cat["answer"] = map_origAnswer_newAnswer(products_cat, filters_def_dict, type_filters)
     traffic_cat = process_all_traffic_answers(traffic_cat, purchased_cat, filters_def_dict, type_filters)
 
-    return products_cat, traffic_cat
+    return products_cat, traffic_cat, purchased_cat
 
