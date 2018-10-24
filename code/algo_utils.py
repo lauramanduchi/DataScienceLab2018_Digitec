@@ -76,9 +76,7 @@ def get_proba_Q_distribution(question, products_cat, traffic_processed, alpha=1)
         for r_dict in response:
             if str(question) in r_dict:
                 history_answered.extend(r_dict[str(question)])
-        if history_answered == []:
-            return(distribution)
-        else: 
+        if not history_answered == []: 
             series = pd.Series(history_answered)
             add_probas = series.value_counts(normalize=True)      
             index = add_probas.index
