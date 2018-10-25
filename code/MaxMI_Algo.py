@@ -57,6 +57,7 @@ def mutual_inf(question, product_set, traffic_set, purchased_set):
     short_mutual_info = 0
     answer_set = product_set.loc[product_set["PropertyDefinitionId"]==question, "answer"].drop_duplicates().values
     # mel 
+    """ OLD - it is better to // in opt_step
     proba_anws_array = np.asarray(parmap.map(prob_answer, answer_set, question=question, product_set=product_set, traffic_set=traffic_set))
     #print(proba_anws_array)
     cond_entr_array = np.asarray(parmap.map(conditional_entropy, answer_set, question = question, product_set=product_set, traffic_set=traffic_set, purchased_set=purchased_set))
@@ -64,10 +65,11 @@ def mutual_inf(question, product_set, traffic_set, purchased_set):
     short_mutual_info = -sum(proba_anws_array*cond_entr_array)
     print(short_mutual_info)
     """
+    
     for answer in answer_set:
         short_mutual_info += - prob_answer(answer, question, product_set, traffic_set)* \
                              conditional_entropy(answer, question, product_set, traffic_set, purchased_set)
-    """
+    print(short_mutual_info)
     return short_mutual_info
 
 
@@ -77,10 +79,17 @@ def opt_step(question_set, product_set, traffic_set, purchased_set):
     MI_matrix = np.zeros([len(question_set), 2])
     i = 0
     n = len(question_set)
+    # parallelize the calculation of the mutual info.
+    # this is the fastest implementation I found, it divides the run time by like 5 or smthg like that.
+    mutual_array = np.asarray(parmap.map(mutual_inf, question_set, product_set=product_set, traffic_set=traffic_set, purchased_set=purchased_set))
+    MI_matrix[:,0] = question_set
+    MI_matrix[:,1] = mutual_array
+    """ NON // version
     for question in question_set:
         print('{} out of {} questions processed'.format(i,n))
         MI_matrix[i] = [question, mutual_inf(question, product_set, traffic_set, purchased_set)]
         i += 1
+    """
     next_question = np.argmax(MI_matrix, axis=0)[1]
     return next_question
 
