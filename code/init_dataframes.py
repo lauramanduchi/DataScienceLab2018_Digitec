@@ -29,7 +29,7 @@ def init_df():
             AND "SessionId" IS NOT NULL);
     ''', c)
     t2 = time.time()
-    print('Created reduced_pruchased in {}'.format(t2-t1))
+    print('Created reduced_purchased in {}'.format(t2-t1))
 
     # Number of the category to use
     cat = 6
@@ -42,7 +42,7 @@ def init_df():
     WHERE "ProductTypeId"='{}' ;
     '''.format(cat), c)
     t2 = time.time()
-    print('Created product_cat in {}'.format(t2-t1))
+    print('Created product_cat in {}s.'.format(t2-t1))
     print('Found {} items'.format(len(products_cat['ProductId'].drop_duplicates().values)))
 
     # Just productId (not sure we really need that)
@@ -53,7 +53,7 @@ def init_df():
     WHERE "ProductTypeId"='{}' ;
     '''.format(cat), c)
     t2 = time.time()
-    print('Created productIdsCat in {}'.format(t2-t1))
+    print('Created productIdsCat in {}s.'.format(t2-t1))
 
     # All products purchased from selected category
     t1 = time.time()
@@ -61,7 +61,7 @@ def init_df():
                     left_on="ProductId", right_on="Items_ProductId", \
                     how = "inner")
     t2 = time.time()
-    print('Created purchased_Cat in {}'.format(t2-t1))
+    print('Created purchased_Cat in {}s.'.format(t2-t1))
     print('Found {} sold items. And {} unique product id'.format(len(purchased_cat), len(purchased_cat["ProductId"])))
 
 
@@ -76,7 +76,7 @@ def init_df():
 
     i=0
     for b in batches:
-        print(i)
+        print("Processing batch: {}".format(i))
         i+=1
         s = text('''SELECT "RequestUrl", "Timestamp", "SessionId" FROM traffic 
                 WHERE ("SessionId" IN {}
