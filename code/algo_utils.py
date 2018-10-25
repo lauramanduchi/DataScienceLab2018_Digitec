@@ -10,19 +10,19 @@ def select_subset(product_set, traffic_set, question, answer, purchased_set = []
     enter the string corresponding to question number and to answer number
     """
     if answer=='idk': # case i don't know the answer return everything
-        return(product_set, traffic_set)
+        return(product_set, traffic_set, [])
     else:
-        q_keep = set(product_set.loc[product_set["PropertyDefinitionId"]==float(question), "ProductId"].drop_duplicates().index.values)
-        a_keep = set(product_set.loc[product_set["answer"]==float(answer), "ProductId"].drop_duplicates().index.values)
+        q_keep = set(product_set.loc[product_set["PropertyDefinitionId"]==int(question), "ProductId"].index.values) # had to remove this drop_duplicates() because it changed the index !!!!!!!
+        a_keep = set(product_set.loc[product_set["answer"].astype(str)==str(answer), "ProductId"].index.values)
         total = a_keep.intersection(q_keep)
         products_to_keep = product_set.loc[total, "ProductId"].drop_duplicates().values          
         product_set = product_set.loc[product_set["ProductId"].isin(products_to_keep),]
         traffic_set = traffic_set.loc[traffic_set["Items_ProductId"].isin(products_to_keep),]
         if len(purchased_set) != 0:
             purchased_set = purchased_set.loc[purchased_set["Items_ProductId"].isin(products_to_keep),]
-            return(product_set, traffic_set, purchased_set)
         else:
-            return(product_set, traffic_set)
+            purchased_set = []
+        return(product_set, traffic_set, purchased_set)
 
 def get_proba_Y_distribution(products_cat, purchased_cat, alpha=1):
     distribution = pd.DataFrame()
@@ -56,13 +56,13 @@ def get_proba_Q_distribution(question, products_cat, traffic_processed, alpha=1)
         print('Nothing to return there is no product left with this filter')
         return(distribution)
      # step 1: probas is number of product per answer to the question (no history)
-    possible_answers = products_cat.loc[products_cat["PropertyDefinitionId"]==float(question), "answer"] \
-                                    .drop_duplicates().values.astype(int)
+    possible_answers = products_cat.loc[products_cat["PropertyDefinitionId"]==int(question), "answer"] \
+                                    .drop_duplicates().values.astype(float)
     nb_prod_per_answer = []
     for a in possible_answers:
         nb_prod_per_answer.append(len(select_subset(products_cat, traffic_processed, question, a)[0]["ProductId"].drop_duplicates().values))
     distribution["nb_prod"] = nb_prod_per_answer
-    distribution.index = possible_answers
+    distribution.index = possible_answers #type float64
     s = np.sum(nb_prod_per_answer)
     distribution["catalog_proba"] = np.asarray(nb_prod_per_answer)/float(s)
     
@@ -76,21 +76,24 @@ def get_proba_Q_distribution(question, products_cat, traffic_processed, alpha=1)
                 history_answered.extend(r_dict[str(question)])
         if not history_answered == []: 
             series = pd.Series(history_answered)
-            add_probas = series.value_counts(normalize=True)      
+            add_probas = series.value_counts()
+            s_add = sum(add_probas.values)
+            add_probas = add_probas/s_add
             index = add_probas.index
             for i in index:
-                if int(i) in distribution.index:
-                    distribution.loc[int(i), "history_proba"] = add_probas.loc[i]
+                if float(i) in distribution.index:
+                    distribution.loc[float(i), "history_proba"] = add_probas.loc[i]
     distribution["final_proba"] = distribution["history_proba"].values + alpha*distribution["catalog_proba"].values
     S = np.sum(distribution["final_proba"].values)
     distribution["final_proba"] = distribution["final_proba"]/S
-    
-    with open('../data/probabilities.txt', 'a+') as f:
+    """
+#     with open('../data/probabilities.txt', 'a+') as f:
+    with open('../data/probabilities.txt', 'w') as f:
         f.write("get_proba_Q_distribution: ")
         f.write("\n")
         distribution.to_csv(f, header=True)
         f.write("\n")
-
+"""
     return(distribution)
 
 def sample_from_distribution_df(dist_df, size=1):
