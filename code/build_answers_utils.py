@@ -56,7 +56,7 @@ def eliminate_filters_no_answers(df, type_filters):
     return(new)
 
 def map_origAnswer_newAnswer(df, filters_def_dict, type_filters):
-    """ finds the new answer for each row of the dataframe, returns list of new values.
+    """ Finds the new answer for each row of the dataframe, returns list of new values.
     """
     answers = []
     print(len(df.index.values))
@@ -147,7 +147,7 @@ def categorize(filtername, filters_def_dict, type_filters, min_value, max_value=
                     j+=1
                 return(bins[(i-1):j]) #find the bins corresponding to the chosen range
     except KeyError:
-        print('the filter is not in the current product database')
+        print('The filter {} is not in the current product database'.format(filtername))
         return(np.nan)
 
 
