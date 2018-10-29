@@ -5,7 +5,6 @@ from load_utils import *
 import random
 import numpy as np
 import pandas as pd
-#from utils import *
 from init_dataframes import init_df
 import algo_utils
 import parmap
@@ -37,9 +36,9 @@ def conditional_entropy(answer, question, product_set, traffic_set, purchased_se
                                                             purchased_set = purchased_set)
     product_ids = product_set["ProductId"].drop_duplicates().values
     cond_entropy_y = 0
-    p_product = algo_utils.get_proba_Y_distribution(product_set, purchased_set, alpha=1)
+    p_product_given_a = algo_utils.get_proba_Y_distribution(product_set, purchased_set, alpha=1)["final_proba"]
     for product in product_ids:
-        prob_y_given_a = p_product.loc[product]["final_proba"]
+        prob_y_given_a = p_product_given_a.loc[product]
         cond_entropy_y += prob_y_given_a * np.log(prob_y_given_a)
     """
     for product in product_ids:
@@ -52,10 +51,13 @@ def conditional_entropy(answer, question, product_set, traffic_set, purchased_se
 def mutual_inf(question, product_set, traffic_set, purchased_set):
     short_mutual_info = 0
     answer_set = product_set.loc[product_set["PropertyDefinitionId"]==question, "answer"].drop_duplicates().values
-    p_answer = algo_utils.get_proba_Q_distribution(question, product_set, traffic_set, alpha=1)
+    p_answer = algo_utils.get_proba_Q_distribution(question, product_set, traffic_set, alpha=1)["final_proba"]
+    product_set, traffic_set, purchased_set = algo_utils.select_subset(question=question, answer=None,
+                                                            product_set=product_set, traffic_set = traffic_set,
+                                                            purchased_set = purchased_set)
     for answer in answer_set:
-        short_mutual_info += - p_answer.loc[float(answer)]["final_proba"]* \
-                             conditional_entropy(answer, question, product_set, traffic_set, purchased_set)
+        short_mutual_info += - p_answer.loc[float(answer)]* \
+                             conditional_entropy(answer, None, product_set, traffic_set, purchased_set)
     print(short_mutual_info)
     return short_mutual_info
 
@@ -63,8 +65,6 @@ def mutual_inf(question, product_set, traffic_set, purchased_set):
 # Return question which maximizes MI
 def opt_step(question_set, product_set, traffic_set, purchased_set):
     MI_matrix = np.zeros([len(question_set), 2])
-    # parallelize the calculation of the mutual info.
-    # this is the fastest implementation I found, it divides the run time by like 5 or smthg like that.
     mutual_array = np.asarray(parmap.map(mutual_inf, question_set, product_set=product_set, traffic_set=traffic_set, purchased_set=purchased_set))
     MI_matrix[:,0] = list(question_set)
     MI_matrix[:,1] = mutual_array
@@ -96,7 +96,7 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, threshold, y):
         next_question = opt_step(question_set, product_set, traffic_set, purchased_set)
         print("Next question is filter : {}".format(next_question))
         final_question_list.append(next_question)
-        answer = quest_answer_y[str(next_question)][0]          #laura
+        answer = quest_answer_y[int(next_question)][0]          #laura
         product_set, traffic_set, purchased_set = algo_utils.select_subset(question=next_question, answer=answer, product_set=product_set, traffic_set =traffic_set, purchased_set = purchased_set)
         question_set_new = set(algo_utils.get_filters_remaining(product_set))
         question_set = question_set_new.difference(final_question_list)
