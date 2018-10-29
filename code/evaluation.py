@@ -7,7 +7,7 @@ from RandomBaseline import random_baseline, get_distinct_products
 import pandas as pd
 import logging 
 from init_dataframes import init_df
-
+import algo_utils
 try:
     products_cat = load_obj('../data/products_table')
     traffic_cat = load_obj('../data/traffic_table')
@@ -24,7 +24,6 @@ checkpoint_dir = cwd+'/../runs/' + t + '/'
 os.makedirs(checkpoint_dir, 0o777)
 print('Saving to ' + checkpoint_dir)
 
-
 size_test = 25    
 y_array = np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = size_test)
 threshold = 50
@@ -34,10 +33,12 @@ opt_quest = []
 rdm_quest = []
 for y in y_array:
     final_question_list, product_set, y = max_info_algorithm(products_cat, traffic_cat, purchased_cat, threshold, y)
+    print('the length of optimal filter was {}'.format(len(get_distinct_products(product_set))))
     length_opt.append(len(get_distinct_products(product_set)))
     opt_quest.append(final_question_list)
     final_question_list, product_set, y = random_baseline(products_cat, traffic_cat, purchased_cat, threshold, y)
     length_rdm.append(len(get_distinct_products(product_set)))
+    print('the length of random filter was {}'.format(len(get_distinct_products(product_set))))
     rdm_quest.append(final_question_list)
 
 res = pd.DataFrame()
