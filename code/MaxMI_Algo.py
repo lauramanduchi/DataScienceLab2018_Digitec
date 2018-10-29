@@ -58,7 +58,7 @@ def mutual_inf(question, product_set, traffic_set, purchased_set):
     for answer in answer_set:
         short_mutual_info += - p_answer.loc[float(answer)]* \
                              conditional_entropy(answer, None, product_set, traffic_set, purchased_set)
-    print(short_mutual_info)
+    #print(short_mutual_info)
     return short_mutual_info
 
 
@@ -93,14 +93,28 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, threshold, y):
     print("There are {} questions we can ask".format(len(question_set)))
     print("There are {} possible products to choose from".format(len(distinct_products)))
     iter = 1
+
+    # first question is  always  11280
+    first = 11280
+    final_question_list = [11280]
+    answer = quest_answer_y[11280]
+    question_set = question_set.difference(final_question_list)
+    print(len(question_set))
+    product_set, traffic_set, purchased_set = algo_utils.select_subset( \
+                                                        question=first, answer=answer, \
+                                                        product_set=product_set, traffic_set =traffic_set, \
+                                                        purchased_set = purchased_set) 
+    iter = 2
+    print("There are {} more questions we can ask".format(len(question_set)))
+    print("There are {} possible products to choose from".format(len(get_distinct_products(product_set))))
     while not (len(distinct_products) < threshold or len(question_set) == 0):     #laura
         print("Processing question: {}".format(iter))
         next_question = opt_step(question_set, product_set, traffic_set, purchased_set)
         print("Next question is filter : {}".format(next_question))
-        final_question_list.append(next_question)
-        answer = quest_answer_y[int(next_question)][0]          #laura
+        final_question_list.append(int(next_question))
+        answer = quest_answer_y[int(next_question)]        
         product_set, traffic_set, purchased_set = algo_utils.select_subset(question=next_question, answer=answer, product_set=product_set, traffic_set =traffic_set, purchased_set = purchased_set)
-        question_set_new = set(algo_utils.get_filters_remaining(product_set))
+        question_set_new = set(algo_utils.get_filters_remaining(product_set)) 
         question_set = question_set_new.difference(final_question_list)
         distinct_products = get_distinct_products(product_set) #laura
         print("There are {} more questions we can ask".format(len(question_set)))
@@ -108,7 +122,7 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, threshold, y):
         iter+=1
     return final_question_list, product_set, y
 
-
+# first question has to be changed
 
 if __name__=='__main__':
     try:
