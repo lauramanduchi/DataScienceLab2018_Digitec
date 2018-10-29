@@ -68,7 +68,9 @@ def opt_step(question_set, product_set, traffic_set, purchased_set):
     mutual_array = np.asarray(parmap.map(mutual_inf, question_set, product_set=product_set, traffic_set=traffic_set, purchased_set=purchased_set))
     MI_matrix[:,0] = list(question_set)
     MI_matrix[:,1] = mutual_array
-    next_question = np.argmax(MI_matrix, axis=0)[1]
+    next_question_index = np.argmax(MI_matrix, axis=0)[1]
+    next_question = MI_matrix[next_question_index, 0]
+    print(next_question)
     return next_question
 
 def get_distinct_products(product_set):
