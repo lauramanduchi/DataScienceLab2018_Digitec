@@ -12,7 +12,7 @@ def select_subset(product_set, traffic_set = [], question = None, answer = None,
     else:
         if question == None:
             total = set(product_set.loc[product_set["answer"].astype(str)==str(answer), "ProductId"].index.values)
-        elif answer == None:
+        elif ((answer == None) or (answer=='idk')):
             total = set(product_set.loc[product_set["PropertyDefinitionId"]==int(question), "ProductId"].index.values)
         else:
             q_keep = set(product_set.loc[product_set["PropertyDefinitionId"]==int(question), "ProductId"].index.values) # had to remove this drop_duplicates() because it changed the index !!!!!!!
@@ -111,3 +111,49 @@ def get_answers_y(y, product_set):
 def get_filters_remaining(dataset):
     return(dataset["PropertyDefinitionId"].drop_duplicates().values)
     
+
+def get_proba_Q_distribution_idk(question, products_cat, traffic_processed, alpha=1):
+    """
+    assumes answer is already constructed
+    """
+    distribution = pd.DataFrame()
+    number_products_total = len(products_cat['ProductId'].drop_duplicates().values)
+    if (number_products_total==0):
+        print('Nothing to return there is no product left with this filter')
+        return(distribution)
+     # step 1: probas is number of product per answer to the question (no history)
+    possible_answers = products_cat.loc[products_cat["PropertyDefinitionId"]==int(question), "answer"] \
+                                    .drop_duplicates().values.astype(float)
+    nb_prod_per_answer = []
+    for a in possible_answers:
+        nb_prod_per_answer.append(len(select_subset(products_cat, [], question, a)[0]["ProductId"].drop_duplicates().values))
+    distribution["nb_prod"] = nb_prod_per_answer
+    distribution.index = possible_answers #type float64
+    s = np.sum(nb_prod_per_answer)
+    nb_prod_without_answer = number_products_total - s # new
+    distribution["catalog_proba"] = np.asarray(nb_prod_per_answer)/float(number_products_total) # new
+    #step 2: add the history if available just for KNOWN answers
+    distribution["history_proba"] = 0
+    if (len(traffic_processed)>0):
+        history_answered = []
+        response = traffic_processed["answers_selected"].values
+        for r_dict in response:
+            if str(question) in r_dict:
+                history_answered.extend(r_dict[str(question)])
+        if not history_answered == []: 
+            series = pd.Series(history_answered)
+            add_probas = series.value_counts()
+            s_add = sum(add_probas.values)
+            add_probas = add_probas/s_add
+            index = add_probas.index
+            for i in index:
+                if float(i) in distribution.index:
+                    distribution.loc[float(i), "history_proba"] = add_probas.loc[i]
+    distribution["final_proba"] = distribution["history_proba"].values + alpha*distribution["catalog_proba"].values
+    # add the idk case JUST FROM CATALOG
+    distribution.loc["idk", "final_proba"] = nb_prod_without_answer/float(number_products_total)
+    #print(distribution["final_proba"])
+    # renormalize everything
+    S = np.sum(distribution["final_proba"].values)
+    distribution["final_proba"] = distribution["final_proba"]/S
+    return(distribution)
