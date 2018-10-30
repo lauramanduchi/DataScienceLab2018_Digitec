@@ -15,21 +15,6 @@ import time
 # In parallel:
 #y = parmap.map(myfunction, mylist, argument1, mykeyword=argument2)
 
-
-'''Normalized (# products given answer/total # products given question)'''
-def prob_answer(answer, question, product_set, traffic_set):
-    p_answer = algo_utils.get_proba_Q_distribution(question, product_set, traffic_set, alpha=1) #Mel function name
-    return p_answer.loc[float(answer)]["final_proba"]
-
-
-'''Normalized (# products y bought/total #products bought) + (# products y /total #products)'''
-def prob_product(product, product_set, purchased_set):
-    p_product = algo_utils.get_proba_Y_distribution(product_set, purchased_set, alpha=1) #Mel function name
-    return p_product.loc[product]["final_proba"]
-
-'''
-Updates product_set, traffic_set and purchased_set to account for conditionality
-'''
 def conditional_entropy(answer, question, product_set, traffic_set, purchased_set): #laura purchased_set deleted
     product_set, traffic_set, purchased_set = algo_utils.select_subset(question=question, answer=answer,
                                                             product_set=product_set, traffic_set =traffic_set,
@@ -40,18 +25,13 @@ def conditional_entropy(answer, question, product_set, traffic_set, purchased_se
     for product in product_ids:
         prob_y_given_a = p_product_given_a.loc[product]
         cond_entropy_y += prob_y_given_a * np.log(prob_y_given_a)
-    """
-    for product in product_ids:
-        prob_y_given_a = prob_product(product, product_set, purchased_set)
-        cond_entropy_y += prob_y_given_a * np.log(prob_y_given_a)
-    """
     return cond_entropy_y
 
 
 def mutual_inf(question, product_set, traffic_set, purchased_set):
     short_mutual_info = 0
     answer_set = product_set.loc[product_set["PropertyDefinitionId"]==question, "answer"].drop_duplicates().values
-    p_answer = algo_utils.get_proba_Q_distribution(question, product_set, traffic_set, alpha=1)["final_proba"]
+    p_answer = algo_utils.get_proba_Q_distribution_idk(question, product_set, traffic_set, alpha=1)["final_proba"]
     product_set, traffic_set, purchased_set = algo_utils.select_subset(question=question, answer=None,
                                                             product_set=product_set, traffic_set = traffic_set,
                                                             purchased_set = purchased_set)
@@ -65,7 +45,12 @@ def mutual_inf(question, product_set, traffic_set, purchased_set):
 # Return question which maximizes MI
 def opt_step(question_set, product_set, traffic_set, purchased_set):
     MI_matrix = np.zeros([len(question_set), 2])
-    mutual_array = np.asarray(parmap.map(mutual_inf, question_set, product_set=product_set, traffic_set=traffic_set, purchased_set=purchased_set))
+    mutual_array = np.asarray(parmap.map(mutual_inf, \
+                                        question_set, \
+                                        product_set=product_set, \
+                                        traffic_set=traffic_set, \
+                                        purchased_set=purchased_set,
+                                        pm_pbar=True))
     MI_matrix[:,0] = list(question_set)
     MI_matrix[:,1] = mutual_array
     next_question_index = np.argmax(MI_matrix, axis=0)[1]
@@ -93,20 +78,6 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, threshold, y):
     print("There are {} questions we can ask".format(len(question_set)))
     print("There are {} possible products to choose from".format(len(distinct_products)))
     iter = 1
-
-    # first question is  always  11280
-    first = 11280
-    final_question_list = [11280]
-    answer = quest_answer_y[11280]
-    question_set = question_set.difference(final_question_list)
-    print(len(question_set))
-    product_set, traffic_set, purchased_set = algo_utils.select_subset( \
-                                                        question=first, answer=answer, \
-                                                        product_set=product_set, traffic_set =traffic_set, \
-                                                        purchased_set = purchased_set) 
-    iter = 2
-    print("There are {} more questions we can ask".format(len(question_set)))
-    print("There are {} possible products to choose from".format(len(get_distinct_products(product_set))))
     while not (len(distinct_products) < threshold or len(question_set) == 0):     #laura
         print("Processing question: {}".format(iter))
         next_question = opt_step(question_set, product_set, traffic_set, purchased_set)
@@ -122,7 +93,7 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, threshold, y):
         iter+=1
     return final_question_list, product_set, y
 
-# first question has to be changed
+#first could be hardcoded
 
 if __name__=='__main__':
     try:
