@@ -15,6 +15,7 @@ import time
 # In parallel:
 #y = parmap.map(myfunction, mylist, argument1, mykeyword=argument2)
 
+
 def conditional_entropy(answer, question, product_set, traffic_set, purchased_set): #laura purchased_set deleted
     product_set, traffic_set, purchased_set = algo_utils.select_subset(question=question, answer=answer,
                                                             product_set=product_set, traffic_set =traffic_set,
@@ -30,14 +31,11 @@ def conditional_entropy(answer, question, product_set, traffic_set, purchased_se
 
 def mutual_inf(question, product_set, traffic_set, purchased_set):
     short_mutual_info = 0
-    answer_set = product_set.loc[product_set["PropertyDefinitionId"]==question, "answer"].drop_duplicates().values
-    p_answer = algo_utils.get_proba_Q_distribution_idk(question, product_set, traffic_set, alpha=1)["final_proba"]
-    product_set, traffic_set, purchased_set = algo_utils.select_subset(question=question, answer=None,
-                                                            product_set=product_set, traffic_set = traffic_set,
-                                                            purchased_set = purchased_set)
-    for answer in answer_set:
-        short_mutual_info += - p_answer.loc[float(answer)]* \
-                             conditional_entropy(answer, None, product_set, traffic_set, purchased_set)
+    proba_Q = algo_utils.get_proba_Q_distribution_none(question, product_set, traffic_set, alpha=1)["final_proba"]
+    possible_answers = proba_Q.index
+    for answer in possible_answers:
+        short_mutual_info += - proba_Q.loc[answer]* \
+                             conditional_entropy(np.asarray([answer]), question, product_set, traffic_set, purchased_set)
     #print(short_mutual_info)
     return short_mutual_info
 
@@ -50,7 +48,8 @@ def opt_step(question_set, product_set, traffic_set, purchased_set):
                                         product_set=product_set, \
                                         traffic_set=traffic_set, \
                                         purchased_set=purchased_set,
-                                        pm_pbar=True))
+                                        pm_pbar=True,
+                                        pm_parallel=True))
     MI_matrix[:,0] = list(question_set)
     MI_matrix[:,1] = mutual_array
     next_question_index = np.argmax(MI_matrix, axis=0)[1]
@@ -83,7 +82,8 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, threshold, y):
         next_question = opt_step(question_set, product_set, traffic_set, purchased_set)
         print("Next question is filter : {}".format(next_question))
         final_question_list.append(int(next_question))
-        answer = quest_answer_y[int(next_question)]        
+        answer = np.asarray([quest_answer_y[int(next_question)]])  
+        print(answer)      
         product_set, traffic_set, purchased_set = algo_utils.select_subset(question=next_question, answer=answer, product_set=product_set, traffic_set =traffic_set, purchased_set = purchased_set)
         question_set_new = set(algo_utils.get_filters_remaining(product_set)) 
         question_set = question_set_new.difference(final_question_list)

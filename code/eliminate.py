@@ -20,17 +20,14 @@ import time
 # check how idk is handled in get proba Q
 
 def expectation_eliminate(question, product_set, traffic_cat): 
-    proba_Q = algo_utils.get_proba_Q_distribution_idk(question, product_set, traffic_cat)
-    product_q = algo_utils.select_subset(product_set, question=question)[0]
+    proba_Q = algo_utils.get_proba_Q_distribution_none(question, product_set, traffic_cat)
     possible_answers = proba_Q.index
     proba_Q["eliminate"]=0
     for answer in possible_answers:
-        tmp = product_q.loc[product_q["answer"].astype(str)==str(answer)]
+        tmp = algo_utils.select_subset(product_set, question=question, answer=np.asarray([answer]))[0]
         proba_Q.loc[answer, "eliminate"] = 1-len(get_distinct_products(tmp))/len(get_distinct_products(product_set))
         # 1 - prop_kept = prop_eliminate
-    proba_Q.loc["idk", "eliminate"] = 0 # if answer is idk eliminate prop is 0
     prop = np.sum(proba_Q["final_proba"]*proba_Q["eliminate"])
-    #print(prop)
     return (prop)
 
 # Return question which maximizes eliminate
@@ -64,9 +61,8 @@ def get_distinct_products(product_set):
 
  ### BE CAREFUL IT IS SUPER IMPORTANT TO TAKE IDK ANSWERS INTO ACCOUNT IN THE Q DISTRIBUTION
  ### WE SHOULD MODIDY THE OTHER ALGORITHM TO TAKE THAT INTO ACCOUNT
-def max_eliminate_algorithm(product_set, traffic_set, purchased_set, threshold, y):
+def max_eliminate_algorithm(product_set, traffic_set, purchased_set, threshold, y,  answers_y):
     question_set = set(algo_utils.get_questions(product_set))
-    quest_answer_y = algo_utils.get_answers_y(y, product_set)
     final_question_list=[]
     distinct_products = get_distinct_products(product_set)  
     print("There are {} questions we can ask".format(len(question_set)))
@@ -76,32 +72,17 @@ def max_eliminate_algorithm(product_set, traffic_set, purchased_set, threshold, 
         next_question = opt_step(question_set, product_set, traffic_set, purchased_set)
         print("Next question is filter : {}".format(next_question))
         final_question_list.append(int(next_question))
-        answer = quest_answer_y[int(next_question)]        
-        product_set, traffic_set, purchased_set = algo_utils.select_subset(question=next_question, answer=answer, product_set=product_set, traffic_set =traffic_set, purchased_set = purchased_set)
-        question_set_new = set(algo_utils.get_filters_remaining(product_set)) 
-        question_set = question_set_new.difference(final_question_list)
+        answer = answers_y[int(next_question)]        
+        product_set, traffic_set, purchased_set = algo_utils.select_subset(question=next_question, \
+                                                                            answer=answer, \
+                                                                            product_set=product_set, \
+                                                                            traffic_set =traffic_set, \
+                                                                            purchased_set = purchased_set)
+        #question_set_new = set(algo_utils.get_filters_remaining(product_set)) 
+        print(answer)
+        question_set = question_set.difference(final_question_list)
         distinct_products = get_distinct_products(product_set)
         print("There are {} possible products to choose from".format(len(get_distinct_products(product_set))))
         iter+=1
     return final_question_list, product_set, y
 
-
-if __name__=='__main__':
-    try:
-        products_cat = load_obj('../data/products_table')
-        traffic_cat = load_obj('../data/traffic_table')
-        purchased_cat = load_obj('../data/purchased_table')
-        print("Loaded datsets")
-    except:
-        print("Creating datasets...")
-        products_cat, traffic_cat, purchased_cat = init_df()
-    
-    y = products_cat["ProductId"][10]
-    threshold = 50
-    start_time = time.time()
-    print("Start time: {}".format(start_time))
-    final_question_list, product_set, y = max_eliminate_algorithm(products_cat, traffic_cat, purchased_cat, threshold, y)
-    end_time = time.time()
-    print("final_question_list: ", final_question_list)
-    print("length final product set: ", len(product_set))
-    print("The algorithm took {}s.".format(end_time-start_time))

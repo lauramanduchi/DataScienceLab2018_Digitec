@@ -25,15 +25,16 @@ def get_distinct_products(product_set):
 def random_baseline(product_set, traffic_set, purchased_set, threshold, y):
     question_set = set(algo_utils.get_questions(product_set))
     quest_answer_y = algo_utils.get_answers_y(y, product_set)
+    print(quest_answer_y)
     final_question_list=[]
     distinct_products = get_distinct_products(product_set)   
     while not (len(distinct_products) < threshold or len(question_set) == 0):   
         next_question = np.random.choice(np.asarray(list(question_set)), size=1)[0]
         final_question_list.append(int(next_question))
         answer = quest_answer_y[int(next_question)]     
-        product_set, traffic_set, purchased_set = algo_utils.select_subset(question=int(next_question), answer=str(answer), product_set=product_set,traffic_set =traffic_set, purchased_set = purchased_set)
-        question_set_new = set(algo_utils.get_filters_remaining(product_set))
-        question_set = question_set_new.difference(final_question_list) # s- t is written s.difference(t)
+        product_set, traffic_set, purchased_set = algo_utils.select_subset(question=int(next_question), answer=np.asarray([str(answer)]), product_set=product_set,traffic_set =traffic_set, purchased_set = purchased_set)
+        #question_set_new = set(algo_utils.get_filters_remaining(product_set))
+        question_set = question_set.difference(final_question_list) # s- t is written s.difference(t)
         distinct_products = get_distinct_products(product_set) 
         print('There are still {} products to choose from'.format(len(get_distinct_products(product_set))))
     return final_question_list, product_set, y

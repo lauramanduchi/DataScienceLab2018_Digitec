@@ -7,23 +7,30 @@ def select_subset(product_set, traffic_set = [], question = None, answer = None,
     """
     function assumes you have already build the answer column
     """
-    if answer=='idk': # case i don't know the answer return everything
+    if np.array_equal(["idk"], answer): # case i don't know the answer return everything
         return(product_set, traffic_set, [])
     else:
-        if question == None:
-            total = set(product_set.loc[product_set["answer"].astype(str)==str(answer), "ProductId"].index.values)
-        elif ((answer == None) or (answer=='idk')):
-            total = set(product_set.loc[product_set["PropertyDefinitionId"]==int(question), "ProductId"].index.values)
+        q_keep = set(product_set.loc[product_set["PropertyDefinitionId"]==int(question), "ProductId"].index.values) # had to remove this drop_duplicates() because it changed the index !!!!!!!
+        if np.array_equal(["none"], answer):
+            total = q_keep
         else:
-            q_keep = set(product_set.loc[product_set["PropertyDefinitionId"]==int(question), "ProductId"].index.values) # had to remove this drop_duplicates() because it changed the index !!!!!!!
-            a_keep = set(product_set.loc[product_set["answer"].astype(str)==str(answer), "ProductId"].index.values)
+            a_keep = set()
+            for a in answer:
+                a_keep = a_keep.union(set(product_set.loc[product_set["answer"].astype(str)==str(a), "ProductId"].index.values))
             total = a_keep.intersection(q_keep)
-        products_to_keep = product_set.loc[total, "ProductId"].drop_duplicates().values          
-        product_set = product_set.loc[product_set["ProductId"].isin(products_to_keep),]
-        if len(traffic_set) != 0:
-            traffic_set = traffic_set.loc[traffic_set["Items_ProductId"].isin(products_to_keep),]
-        if len(purchased_set) != 0:
-            purchased_set = purchased_set.loc[purchased_set["Items_ProductId"].isin(products_to_keep),]
+        products_to_keep = product_set.loc[total, "ProductId"].drop_duplicates().values
+        if np.array_equal(["none"], answer):
+            product_set = product_set.loc[product_set["ProductId"].isin(products_to_keep)==False,]
+            if len(traffic_set) != 0:
+                traffic_set = traffic_set.loc[traffic_set["Items_ProductId"].isin(products_to_keep)==False,]
+            if len(purchased_set) != 0:
+                purchased_set = purchased_set.loc[purchased_set["Items_ProductId"].isin(products_to_keep)==False,]
+        else:
+            product_set = product_set.loc[product_set["ProductId"].isin(products_to_keep),]
+            if len(traffic_set) != 0:
+                traffic_set = traffic_set.loc[traffic_set["Items_ProductId"].isin(products_to_keep),]
+            if len(purchased_set) != 0:
+                purchased_set = purchased_set.loc[purchased_set["Items_ProductId"].isin(products_to_keep),]
         return(product_set, traffic_set, purchased_set)
 
 def get_proba_Y_distribution(products_cat, purchased_cat, alpha=1):
@@ -48,50 +55,6 @@ def get_proba_Y_distribution(products_cat, purchased_cat, alpha=1):
     distribution["final_proba"] = unormalized_final_proba/np.sum(unormalized_final_proba)
     return(distribution)
 
-def get_proba_Q_distribution(question, products_cat, traffic_processed, alpha=1):
-    """
-    assumes answer is already constructed
-    """
-    distribution = pd.DataFrame()
-    number_products_total = len(products_cat['ProductId'].drop_duplicates().values)
-    if (number_products_total==0):
-        print('Nothing to return there is no product left with this filter')
-        return(distribution)
-     # step 1: probas is number of product per answer to the question (no history)
-    possible_answers = products_cat.loc[products_cat["PropertyDefinitionId"]==int(question), "answer"] \
-                                    .drop_duplicates().values.astype(float)
-    nb_prod_per_answer = []
-    for a in possible_answers:
-        nb_prod_per_answer.append(len(select_subset(products_cat, [], question, a)[0]["ProductId"].drop_duplicates().values))
-    distribution["nb_prod"] = nb_prod_per_answer
-    distribution.index = possible_answers #type float64
-    s = np.sum(nb_prod_per_answer)
-    distribution["catalog_proba"] = np.asarray(nb_prod_per_answer)/float(s)
-    
-    #step 2: add the history if available
-    distribution["history_proba"] = 0
-    if (len(traffic_processed)>0):
-        history_answered = []
-        response = traffic_processed["answers_selected"].values
-        for r_dict in response:
-            if str(question) in r_dict:
-                history_answered.extend(r_dict[str(question)])
-        if not history_answered == []: 
-            series = pd.Series(history_answered)
-            add_probas = series.value_counts()
-            s_add = sum(add_probas.values)
-            add_probas = add_probas/s_add
-            index = add_probas.index
-            for i in index:
-                if float(i) in distribution.index:
-                    distribution.loc[float(i), "history_proba"] = add_probas.loc[i]
-    distribution["final_proba"] = distribution["history_proba"].values + alpha*distribution["catalog_proba"].values
-    S = np.sum(distribution["final_proba"].values)
-    distribution["final_proba"] = distribution["final_proba"]/S
-    return(distribution)
-
-def sample_from_distribution_df(dist_df, size=1):
-    return(np.random.choice(dist_df.index.values, size=1, p=dist_df["final_proba"].values))
 
 def get_questions(product_set):
     return(product_set["PropertyDefinitionId"].drop_duplicates().values)
@@ -103,7 +66,7 @@ def get_answers_y(y, product_set):
     for q in questions:
         a = tmp.loc[product_set["PropertyDefinitionId"]==q,"answer"].values
         if len(a)==0:
-            res.update({q: 'idk'})
+            res.update({q: 'none'})
         else:
             res.update({q: a[0]})
     return(res)
@@ -112,7 +75,7 @@ def get_filters_remaining(dataset):
     return(dataset["PropertyDefinitionId"].drop_duplicates().values)
     
 
-def get_proba_Q_distribution_idk(question, products_cat, traffic_processed, alpha=1):
+def get_proba_Q_distribution_none(question, products_cat, traffic_processed, alpha=1):
     """
     assumes answer is already constructed
     """
@@ -126,11 +89,11 @@ def get_proba_Q_distribution_idk(question, products_cat, traffic_processed, alph
                                     .drop_duplicates().values.astype(float)
     nb_prod_per_answer = []
     for a in possible_answers:
-        nb_prod_per_answer.append(len(select_subset(products_cat, [], question, a)[0]["ProductId"].drop_duplicates().values))
+        nb_prod_per_answer.append(len(select_subset(products_cat, [], question, np.asarray([a]))[0]["ProductId"].drop_duplicates().values))
     distribution["nb_prod"] = nb_prod_per_answer
     distribution.index = possible_answers #type float64
-    s = np.sum(nb_prod_per_answer)
-    nb_prod_without_answer = number_products_total - s # new
+    nb_prod_without_answer = len(products_cat.loc[products_cat["PropertyDefinitionId"].isin([int(question)])==False, "ProductId"] \
+                                    .drop_duplicates().values) # new
     distribution["catalog_proba"] = np.asarray(nb_prod_per_answer)/float(number_products_total) # new
     #step 2: add the history if available just for KNOWN answers
     distribution["history_proba"] = 0
@@ -151,7 +114,7 @@ def get_proba_Q_distribution_idk(question, products_cat, traffic_processed, alph
                     distribution.loc[float(i), "history_proba"] = add_probas.loc[i]
     distribution["final_proba"] = distribution["history_proba"].values + alpha*distribution["catalog_proba"].values
     # add the idk case JUST FROM CATALOG
-    distribution.loc["idk", "final_proba"] = nb_prod_without_answer/float(number_products_total)
+    distribution.loc["none", "final_proba"] = nb_prod_without_answer/float(number_products_total)
     #print(distribution["final_proba"])
     # renormalize everything
     S = np.sum(distribution["final_proba"].values)
