@@ -38,7 +38,7 @@ def get_next_question(state):
     Returns:
         next_question and boolean variable done
     """
-    product_set, traffic_set, purchased_set = get_products(state)                                           #TO DO!!
+    product_set, traffic_set, purchased_set = get_products(state)                                           #TODO MEL
     question_set_new = set(algo_utils.get_filters_remaining(product_set))
     question_set = question_set_new.difference(state["questions"])
     if len(product_set) < threshold :
@@ -68,12 +68,16 @@ if __name__=='__main__':
 
     except:
         print("Data not found, asking the teacher to create it \n")
-        state_list, question_list = get_data_from_teacher()                       #TO DO!!
+        state_list, question_list = get_data_from_teacher()                                                   #TODO MEL
         #for all products run MaxMI and get the set of (state, question) it made
         print('Saving data')
-        tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': action_list, name = '_tmp.npy')
+        tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list, name = '_tmp.npy')
 
     ###===================== Pretrain model using data for demonstration
+    #call PRE-training
+    model.train(state_list, question_list, n_epoch=n_epoch, batch_size=batch_size)  #TODO TINYMEL
+    model.save_model()
+
     checkpoint_file = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
 
 
@@ -88,8 +92,7 @@ if __name__=='__main__':
         state = []
         while True:
             q = model.predict(state)     #test the model for input state
-            a = get_answer(q, y)            #TO DO!
-
+            a = get_answer(q, y)                                #TODO MEL
             state.append([q, a])
             q_true, done = get_next_question(state)
             if done is True:
@@ -103,7 +106,8 @@ if __name__=='__main__':
         state_list.append(state)
         question_list.append(q_list)
 
-        model.train(state_list, action_list, n_epoch=n_epoch, batch_size=batch_size)  #TO DO !!
+        #RE-TRAIN WITH THE NEW DATASET
+        model.retrain(state_list, action_list, n_epoch=n_epoch, batch_size=batch_size)  #TODO TINYMEL
         model.save_model()
 
     ###=================== Play the game with the trained model

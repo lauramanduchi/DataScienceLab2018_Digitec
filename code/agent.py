@@ -6,9 +6,9 @@ tf.flags.DEFINE_integer("n_layers", 5, "number of layers (default: 5)")
 tf.flags.DEFINE_float("learning_rate", 0.0001, "learning rate (default: 0.0001)")
 
 class model(object):
-    def __init__(self, param1, param2):
+    def __init__(self, number_filters, tot_answers):
         # These variables are used to feed data into the graph
-        self.x = tf.placeholder(name='x', shape=(None, 27), dtype=tf.int32)
+        self.x = tf.placeholder(name='x', shape=(None, tot_answers), dtype=tf.int32)
         self.labels = tf.placeholder(name='labels', shape=None, dtype=tf.int32)
 
         # Create a list of layer sizes for our network
@@ -24,10 +24,10 @@ class model(object):
                 b = tf.get_variable(name='b' + str(i), shape=out_size, dtype=tf.float32)
                 layer_output = nonlinearity(tf.matmul(layer_output, W) + b)
 
-        # Compute two logits for a softmax layer
+        # Compute 27 logits for a softmax layer
         with tf.variable_scope('softmax', reuse=None):
-            softmax_W = tf.get_variable(name='softmax_W', shape=(hidden_units, 2), dtype=tf.float32)
-            softmax_b = tf.get_variable(name='softmax_b', shape=2, dtype=tf.float32)
+            softmax_W = tf.get_variable(name='softmax_W', shape=(hidden_units, number_filters), dtype=tf.float32)
+            softmax_b = tf.get_variable(name='softmax_b', shape=number_filters, dtype=tf.float32)
             logits = tf.matmul(layer_output, softmax_W) + softmax_b
 
         # Instead of explicitly computing softmax, just pass logits to this loss functions

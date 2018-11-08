@@ -115,8 +115,8 @@ with tf.Graph().as_default():
             out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", FLAGS.run_name))
         print("Writing to {}\n".format(out_dir))
 
-        # Checkpoint directory. TF assumes this directory already exists so we need to create it
-        checkpoint_dir = os.path.abspath(os.path.join(out_dir, "checkpoints"))
+        #Checkpoint directory. TF assumes this directory already exists so we need to create it
+        checkpoint_dir = os.path.abspath(os.path.join(out_dir, "checkpoints"))      #TODO MODIFY TO WRITE TO THE DEFINED FOLDER
         checkpoint_prefix = os.path.join(checkpoint_dir, "model")
         if not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
