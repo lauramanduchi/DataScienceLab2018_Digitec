@@ -2,7 +2,7 @@ from load_utils import *
 import numpy as np
 import algo_utils
 import parmap
-from user_utils import question_id_to_text, answer_id_to_text
+from build_answers_utils import question_id_to_text, answer_id_to_text
 
 
 # about parmap
@@ -57,8 +57,6 @@ def get_distinct_products(product_set):
  2) final product list
  3) y chosen as input of algo'''
 
- ### BE CAREFUL IT IS SUPER IMPORTANT TO TAKE IDK ANSWERS INTO ACCOUNT IN THE Q DISTRIBUTION
- ### WE SHOULD MODIDY THE OTHER ALGORITHM TO TAKE THAT INTO ACCOUNT
 def max_eliminate_algorithm(product_set, traffic_set, purchased_set, question_text_df, answer_text_df,
                             threshold, y,  answers_y):
     question_set = set(algo_utils.get_questions(product_set))
@@ -69,7 +67,7 @@ def max_eliminate_algorithm(product_set, traffic_set, purchased_set, question_te
     print("There are {} questions we can ask".format(len(question_set)))
     print("There are {} possible products to choose from".format(len(distinct_products)))
     iter = 1
-    while not (len(distinct_products) < threshold or len(question_set) == 0):     #laura
+    while not (len(distinct_products) < threshold or len(question_set) == 0):  
         next_question = opt_step(question_set, product_set, traffic_set, purchased_set)
         next_question = int(next_question)
         print("Next question is filter : {}".format(next_question))
@@ -87,7 +85,6 @@ def max_eliminate_algorithm(product_set, traffic_set, purchased_set, question_te
                                                                             product_set=product_set, \
                                                                             traffic_set =traffic_set, \
                                                                             purchased_set = purchased_set)
-        #question_set_new = set(algo_utils.get_filters_remaining(product_set)) 
         question_set = question_set.difference(final_question_list)
         distinct_products = get_distinct_products(product_set)
         print("There are {} possible products to choose from".format(len(get_distinct_products(product_set))))

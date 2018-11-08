@@ -6,9 +6,9 @@ import pandas as pd
 import numpy as np
 import time
 from parser import parse_query_string
-from data_utils import batch, keep_only_useful_URLs
-from build_answers_utils import create_categories, eliminate_filters_no_answers, map_origAnswer_newAnswer, process_all_traffic_answers
-
+from build_answers_utils import keep_only_useful_URLs, create_categories, eliminate_filters_no_answers, map_origAnswer_newAnswer, process_all_traffic_answers, map_text_new_answer
+from load_utils import load_obj, save_obj, batch
+        
 def init_df():
     # ------------------- DATABASE SETUP ------------- #
     # initialize connection to the machine
@@ -16,7 +16,7 @@ def init_df():
     c = engine.connect()
 
     # ------------------- RELEVANT DATAFRAME SETUP ------------- #
-    # reduced purchased
+    # ---------------  reduced purchased ---------------- #
     t1 = time.time()
     reduced_purchased = pd.read_sql_query(''' 
     SELECT "UserId", "OrderId", "SessionId", "Items_ProductId", "Items_ItemCount"
@@ -34,7 +34,7 @@ def init_df():
     # Number of the category to use
     cat = 6
 
-    # Extract relevant products_cat
+    # ---------------- Extract relevant products_cat ------------- #
     t1 = time.time()
     products_cat = pd.read_sql_query('''
     SELECT "ProductId", "BrandId", "ProductTypeId", "PropertyValue", "PropertyDefinitionId", "PropertyDefinitionOptionId"
@@ -45,7 +45,7 @@ def init_df():
     print('Created product_cat in {}s.'.format(t2-t1))
     print('Found {} items'.format(len(products_cat['ProductId'].drop_duplicates().values)))
 
-    # Just productId (not sure we really need that)
+    # ------------- Just productId (not sure we really need that) --- #
     t1 = time.time()
     productIdsCat = pd.read_sql_query('''
     SELECT DISTINCT "ProductId"
@@ -55,7 +55,7 @@ def init_df():
     t2 = time.time()
     print('Created productIdsCat in {}s.'.format(t2-t1))
 
-    # All products purchased from selected category
+    # -------- All products purchased from selected category ----- #
     t1 = time.time()
     purchased_cat = pd.merge(productIdsCat, reduced_purchased, \
                     left_on="ProductId", right_on="Items_ProductId", \
@@ -65,7 +65,9 @@ def init_df():
     print('Found {} sold items. And {} unique product id'.format(len(purchased_cat), len(purchased_cat["ProductId"])))
 
 
-    # Building relevant extract of traffic
+    # --------- Extract of relevant traffic -------- #
+    traffic_cat = pd.DataFrame()
+    """
     no_sessionId_found = 0
     no_matching_rows = 0
     SessionIds = purchased_cat["SessionId"].drop_duplicates().values.astype(int)
@@ -91,17 +93,43 @@ def init_df():
     print('Out of {} sessionsId found in the purchase dataset (category {}), {} were matched to at least one entry in the traffic table.'
           .format(no_sessionId_purchased, cat, no_sessionId_found))
     print('In total there were {} matching rows in the traffic dataset'.format(no_matching_rows))
-
-
-    # Keep only parsable lines in traffic
     traffic_cat = keep_only_useful_URLs(traffic_cat)
-
+    """
 
     # ------------------- NEW ANSWERS SETUP - PRODUCT CATALOG ------------- #
     filters_def_dict, type_filters  = create_categories(products_cat)
     products_cat = eliminate_filters_no_answers(products_cat, type_filters)
     products_cat["answer"] = map_origAnswer_newAnswer(products_cat, filters_def_dict, type_filters)
-    traffic_cat = process_all_traffic_answers(traffic_cat, purchased_cat, filters_def_dict, type_filters)
+    
+    # ------------- Map traffic data to new answers --------------- #
+    #traffic_cat = process_all_traffic_answers(traffic_cat, purchased_cat, filters_def_dict, type_filters)
 
-    return products_cat, traffic_cat, purchased_cat
+    # ------------- get text of the question ------------- #
+    question_text_df = pd.read_sql_query('''
+              SELECT DISTINCT "PropertyDefinition", "PropertyDefinitionId" from product
+              WHERE "ProductTypeId"='6'
+              ''', c)
+    print('done question_text_df')
+    # ---------- get text of answer ---------- #
+    opt_answer_text_df = pd.read_sql_query('''
+              SELECT DISTINCT "PropertyDefinitionOption", "PropertyDefinitionOptionId" from product
+              WHERE "ProductTypeId"='6'
+              ''', c)
+    print('begin answer_text')
+    answer_text = pd.DataFrame()
+    answer_text["answer_id"] = products_cat["answer"]
+    answer_text["question_id"] = products_cat["PropertyDefinitionId"]
+    answer_text["answer_text"] = map_text_new_answer(products_cat, opt_answer_text_df, type_filters, filters_def_dict)
+    answer_text = answer_text.drop_duplicates()
+    return products_cat, traffic_cat, purchased_cat, filters_def_dict, type_filters, question_text_df, answer_text
+
+if __name__=="__main__":
+    products_cat, traffic_cat, purchased_cat, filters_def_dict, type_filters, question_text_df, answer_text = init_df()
+    save_obj(products_cat, '../data/products_table')
+    #save_obj(traffic_cat, '../data/traffic_table')
+    save_obj(purchased_cat, '../data/purchased_table')
+    save_obj(filters_def_dict, '../data/filters_def_dict')
+    save_obj(type_filters, '../data/type_filters')
+    save_obj(question_text_df, '../data/question_text_df')
+    save_obj(answer_text, '../data/answer_text')
 

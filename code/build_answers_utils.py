@@ -4,6 +4,17 @@ import pandas as pd
 import numpy as np
 from parser import parse_query_string
 
+def keep_only_useful_URLs(df):
+    new = df.copy()
+    for i in df.index.values:
+        if i%1000 == 0:
+            print(i)
+            print(len(new))
+        url = new.loc[i, "RequestUrl"]
+        if not bool(parse_query_string(url)):
+            new = new.drop(i) # eliminate the row if the parser returns empty dict
+    return(new)
+
 def create_categories(df_category):
     """ Defines the new answers. 
     Args:
@@ -79,6 +90,22 @@ def map_origAnswer_newAnswer(df, filters_def_dict, type_filters):
             else:
                 answers.append(df.loc[i,"PropertyDefinitionOptionId"]) 
     return(answers)
+
+def map_text_new_answer(df, answer_text_df, type_filters, filters_def_dict):
+    text_answers = []
+    for i in df.index.values:
+        filter = df.loc[i, "PropertyDefinitionId"] 
+        if (type_filters[str(filter)]=='option' or type_filters[str(filter)]=='mixed'):
+            text_answers.append(answer_text_df.loc[answer_text_df["PropertyDefinitionOptionId"] == str(int(i))]["PropertyDefinitionOption"])
+        elif type_filters[str(filter)]=='bin':
+            bins = filters_def_dict[str(filter)]
+            idx = np.where(bins == df.loc[i, "answer"])[0]
+            try:
+                my_string = '[{}-{}]'.format(bins[idx], bins[idx+1])
+            except(IndexError):
+                my_string = 'over {}'.format(bins[idx])
+            text_answers.append(my_string)
+    return(text_answers)
 
 def filters_answers_per_requestURL(RequestUrl):
     """
@@ -219,3 +246,26 @@ def process_all_traffic_answers(traffic_df, purchased_cat, filters_def_dict, typ
             res.loc[res["SessionId"]==s, "answers_selected"] = [temp]
     res = res.merge(purchased_cat, how='inner', left_on="SessionId", right_on="SessionId")[["SessionId","answers_selected", "Items_ProductId"]]
     return(res)
+
+
+def question_id_to_text(question, question_df):
+    try:
+        question_text = question_df[question_df["PropertyDefinitionId"] == str(question)]["PropertyDefinition"].values[0]
+    except:
+        question_text = 'No text equivalent for question'
+    return question_text
+
+def answer_id_to_text(answer, answer_df):
+    answer_list = []
+    for i in answer:
+        if i == 'idk':
+            answer_list.append('idk')
+        elif i == 'none':
+            answer_list.append('none')
+        else:
+            try:
+                # answer_list.append(answer_df[answer_df["PropertyDefinitionOptionId"] == str(int(i))].iloc[0][0])
+                answer_list.append(answer_df[answer_df["PropertyDefinitionOptionId"] == str(int(i))]["PropertyDefinitionOption"].values[0])
+            except:
+                answer_list.append('Not found')
+    return (answer_list)

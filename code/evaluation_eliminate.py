@@ -10,7 +10,6 @@ import algo_utils
 import argparse
 from sampler import sample_answers
 import warnings
-from to_text_datasets import question_to_text_df, answer_to_text_df
 
 # To remove future warning from being printed out
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -20,18 +19,18 @@ try:
     traffic_cat = load_obj('../data/traffic_table')
     purchased_cat = load_obj('../data/purchased_table')
     question_text_df = load_obj('../data/question_text_df')
-    answer_text_df = load_obj('../data/answer_text_df')
+    answer_text_df = load_obj('../data/answer_text')
     print("Loaded datasets")
 except:
     print("Creating datasets...")
-    # products_cat, traffic_cat, purchased_cat = init_df()
-    # save_obj(products_cat, '../data/products_table')
-    # save_obj(traffic_cat, '../data/traffic_table')
-    # save_obj(purchased_cat, '../data/purchased_table')
-    question_text_df = question_to_text_df()
-    answer_text_df = answer_to_text_df()
-    save_obj(answer_text_df, "../data/answer_text_df")
+    products_cat, traffic_cat, purchased_cat, filters_def_dict, type_filters, question_text_df, answer_text = init_df()
+    save_obj(products_cat, '../data/products_table')
+    save_obj(traffic_cat, '../data/traffic_table')
+    save_obj(purchased_cat, '../data/purchased_table')
+    save_obj(filters_def_dict, '../data/filters_def_dict')
+    save_obj(type_filters, '../data/type_filters')
     save_obj(question_text_df, '../data/question_text_df')
+    save_obj(answer_text, '../data/answer_text')
     print("Created datasets")
 
 time.time()
@@ -64,8 +63,9 @@ length_opt = []
 length_rdm = []
 opt_quest = []
 rdm_quest = []
-# opt_quest_text = []
-# all_answer_text_list = []
+opt_quest_text = []
+rdm_quest_text = []
+opt_answer_text_list = []
 with open(checkpoint_dir +'/lengths.csv', 'w+') as f:
     f.write("opt, random \n")
 with open(checkpoint_dir +'/quest.csv', 'w+') as f:
@@ -78,9 +78,9 @@ for y in y_array:
     print('the length of optimal eliminate filter was {}'.format(len(final_question_list)))
     length_opt.append(len(final_question_list))
     opt_quest.append(final_question_list)
-    # opt_quest_text.append(final_question_text_list)
-    # all_answer_text_list.append(answer_text_list)
-    final_question_list, product_set, y = random_baseline(products_cat, traffic_cat, purchased_cat, threshold, y)
+    opt_quest_text.append(final_question_text_list)
+    opt_answer_text_list.append(answer_text_list)
+    final_question_list, product_set, y = random_baseline(products_cat, traffic_cat, purchased_cat, threshold, y) # TODO add answer text
     length_rdm.append(len(final_question_list))
     print('the length of random filter was {}'.format(len(final_question_list)))
     rdm_quest.append(final_question_list)
@@ -88,10 +88,11 @@ for y in y_array:
         f.write('{}, {} \n'.format(length_opt[-1], length_rdm[-1]))
     with open(checkpoint_dir +'/quest.csv', 'a+') as f:
         f.write('{}, {} \n'.format(opt_quest[-1], rdm_quest[-1]))
-    # with open(checkpoint_dir +'/quest_text.csv', 'a+') as f:
-    #     f.write('{}, {} \n'.format(opt_quest_text[-1], rdm_quest[-1]))
-    # with open(checkpoint_dir +'/answer_text.csv', 'a+') as f:
-    #     f.write('{}, {} \n'.format(all_answer_text_list[-1], rdm_quest[-1]))
+    with open(checkpoint_dir +'/quest_text.csv', 'a+') as f:
+         f.write('{}, {} \n'.format(opt_quest_text[-1], rdm_quest_text[-1]))
+    with open(checkpoint_dir +'/opt_answer_text.csv', 'a+') as f:
+         #f.write('{}, {} \n'.format(opt_answer_text_list[-1], rdm_answer_text_list[-1]))
+         f.write('{} \n'.format(opt_answer_text_list[-1]))
 with open(checkpoint_dir +'/summary.txt', 'w+') as f:
     f.write('Test set size: {} \n Probability of answering I dont know: {} \n Probability of giving 2 answers: {} Probability of giving 3 answers: {} \n'.format(size_test, p_idk, p_2a, p_3a))
     f.write('Avg number of questions for optimal {} \n'.format(np.mean(np.asarray(length_opt))))
