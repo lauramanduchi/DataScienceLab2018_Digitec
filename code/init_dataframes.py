@@ -16,6 +16,7 @@ def init_df():
     c = engine.connect()
 
     # ------------------- RELEVANT DATAFRAME SETUP ------------- #
+    
     # ---------------  reduced purchased ---------------- #
     t1 = time.time()
     reduced_purchased = pd.read_sql_query(''' 
@@ -67,7 +68,7 @@ def init_df():
 
     # --------- Extract of relevant traffic -------- #
     traffic_cat = pd.DataFrame()
-    """
+    
     no_sessionId_found = 0
     no_matching_rows = 0
     SessionIds = purchased_cat["SessionId"].drop_duplicates().values.astype(int)
@@ -94,7 +95,7 @@ def init_df():
           .format(no_sessionId_purchased, cat, no_sessionId_found))
     print('In total there were {} matching rows in the traffic dataset'.format(no_matching_rows))
     traffic_cat = keep_only_useful_URLs(traffic_cat)
-    """
+    
 
     # ------------------- NEW ANSWERS SETUP - PRODUCT CATALOG ------------- #
     filters_def_dict, type_filters  = create_categories(products_cat)
@@ -115,18 +116,19 @@ def init_df():
               SELECT DISTINCT "PropertyDefinitionOption", "PropertyDefinitionOptionId" from product
               WHERE "ProductTypeId"='6'
               ''', c)
+    save_obj(opt_answer_text_df, '../data/opt_answer_text_df')
     print('begin answer_text')
     answer_text = pd.DataFrame()
     answer_text["answer_id"] = products_cat["answer"]
     answer_text["question_id"] = products_cat["PropertyDefinitionId"]
     answer_text["answer_text"] = map_text_new_answer(products_cat, opt_answer_text_df, type_filters, filters_def_dict)
-    answer_text = answer_text.drop_duplicates()
+    answer_text.drop_duplicates(inplace=True)
     return products_cat, traffic_cat, purchased_cat, filters_def_dict, type_filters, question_text_df, answer_text
 
 if __name__=="__main__":
     products_cat, traffic_cat, purchased_cat, filters_def_dict, type_filters, question_text_df, answer_text = init_df()
     save_obj(products_cat, '../data/products_table')
-    #save_obj(traffic_cat, '../data/traffic_table')
+    save_obj(traffic_cat, '../data/traffic_table')
     save_obj(purchased_cat, '../data/purchased_table')
     save_obj(filters_def_dict, '../data/filters_def_dict')
     save_obj(type_filters, '../data/type_filters')
