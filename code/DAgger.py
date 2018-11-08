@@ -7,6 +7,8 @@ from random import randint
 import numpy as np
 import algo_utils
 import MaxMI_Algo
+from init_dataframes import init_df
+from load_utils import *
 
 n_action = 1        # steer only (float, left and right 1 ~ -1)
 steps = 27        # maximum number of questions
@@ -49,11 +51,43 @@ def get_next_question(state):
     #done =True means the remain product_set is smaller than threshold
     return next_question,done
 
+
+def get_onehot_state(state):
+    questions = sorted(filters_def_dict.keys())
+    onehot_state = []
+    for q in questions:
+        all_a = sorted(filters_def_dict[q]) #get all sorted possible answers
+        # if q has been answered in state
+        if q in state[:,0]:
+            a = state[np.where(state[:,0] == q),1]  #get answer from that question
+            for a_h in all_a: #for all possible answers of q
+                if a_h == a:
+                    onehot_state.append(1)
+                else:
+                    onehot_state.append(0)
+        # if q has NOT been answered in state
+        else:
+            [onehot_state.append(0) for i in range(len(all_a))]
+
+
 #to add option to choose whether to run MaxMI again or not (if they change catalogue)
 if __name__=='__main__':
-    state_list = []
-    question_list = []
-    #reward_list = []
+
+    ###================= Load the product catalogue
+    try:
+        products_cat = load_obj('../data/products_table')
+        traffic_cat = load_obj('../data/traffic_table')
+        purchased_cat = load_obj('../data/purchased_table')
+        filters_def_dict = load_obj('../data/filters_def_dict')
+        print("Loaded datasets")
+    except:
+        print("Creating datasets...")
+        products_cat, traffic_cat, purchased_cat = init_df()
+        save_obj(products_cat, '../data/products_table')
+        save_obj(traffic_cat, '../data/traffic_table')
+        save_obj(purchased_cat, '../data/purchased_table')
+        print("Created datasets")
+
 
     ###================= Get demonstration data
     """TO USE IN PRE-TRAINING"""
@@ -68,14 +102,24 @@ if __name__=='__main__':
 
     except:
         print("Data not found, asking the teacher to create it \n")
+
+        #state = np.array((n, 2)) [[q1,a1],[q2,a2], ...]
         state_list, question_list = get_data_from_teacher()                                                   #TODO MEL
         #for all products run MaxMI and get the set of (state, question) it made
+
         print('Saving data')
         tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list, name = '_tmp.npy')
 
     ###===================== Pretrain model using data for demonstration
-    #call PRE-training
-    model.train(state_list, question_list, n_epoch=n_epoch, batch_size=batch_size)  #TODO TINYMEL
+
+    #Modify states in onehot vectors
+    onehot_state_list = []
+    for state in state_list:
+        onehot_state = get_onehot_state(state)
+        onehot_state_list.append[onehot_state]
+
+    # call PRE-training
+    model.train(onehot_state_list, question_list, n_epoch=n_epoch, batch_size=batch_size)  #TODO TINYMEL
     model.save_model()
 
     checkpoint_file = tf.train.latest_checkpoint(FLAGS.checkpoint_dir)
