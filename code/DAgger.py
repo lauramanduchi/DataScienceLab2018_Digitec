@@ -156,7 +156,8 @@ if __name__=='__main__':
         # restart the game for every episode
         print("#" * 50)
         print("# Episode: %d start" % episode)
-        y = randint(1, n_products)
+        y = np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = 1)[0]
+        answer_list_y = sample_answers(y, products_cat) # dict {'q1': [a1], 'q2': [a2, a3]}
         state = []
         while True:
             q = model.predict(state)     #test the model for input state
