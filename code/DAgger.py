@@ -65,6 +65,12 @@ def get_next_question(state):
 
 
 def get_onehot_state(state):
+    """ Compute the one-hot vector state from state.
+    Args:
+        state: {"q1":[a1,a2], "q2":[a3], ..}
+    Returns:
+        next_question and boolean variable done
+    """
     questions = sorted(filters_def_dict.keys())
     onehot_state = []
     for q in questions:
