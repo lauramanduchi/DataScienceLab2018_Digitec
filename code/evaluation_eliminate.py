@@ -66,6 +66,7 @@ rdm_quest = []
 opt_quest_text = []
 rdm_quest_text = []
 opt_answer_text_list = []
+rdm_answer_text_list = []
 with open(checkpoint_dir +'/lengths.csv', 'w+') as f:
     f.write("opt, random \n")
 with open(checkpoint_dir +'/quest.csv', 'w+') as f:
@@ -80,19 +81,30 @@ for y in y_array:
     opt_quest.append(final_question_list)
     opt_quest_text.append(final_question_text_list)
     opt_answer_text_list.append(answer_text_list)
-    final_question_list, product_set, y = random_baseline(products_cat, traffic_cat, purchased_cat, threshold, y) # TODO add answer text
-    length_rdm.append(len(final_question_list))
+    rb_final_question_list, rb_product_set, rb_y, \
+    rb_final_question_text_list, rb_answer_text_list = random_baseline(products_cat, traffic_cat, purchased_cat,
+                                                                 question_text_df, answer_text_df, threshold, y)
+    length_rdm.append(len(rb_final_question_list))
+    rdm_quest.append(rb_final_question_list)
+    rdm_quest_text.append(rb_final_question_text_list)
+    rdm_answer_text_list.append(rb_answer_text_list)
     print('the length of random filter was {}'.format(len(final_question_list)))
     rdm_quest.append(final_question_list)
     with open(checkpoint_dir +'/lengths.csv', 'a+') as f:
         f.write('{}, {} \n'.format(length_opt[-1], length_rdm[-1]))
-    with open(checkpoint_dir +'/quest.csv', 'a+') as f:
+    with open(checkpoint_dir +'/opt_quest.csv', 'a+') as f:
         f.write('{}, {} \n'.format(opt_quest[-1], rdm_quest[-1]))
-    with open(checkpoint_dir +'/quest_text.csv', 'a+') as f:
+    with open(checkpoint_dir +'/opt_quest_text.csv', 'a+') as f:
          f.write('{}, {} \n'.format(opt_quest_text[-1], rdm_quest_text[-1]))
     with open(checkpoint_dir +'/opt_answer_text.csv', 'a+') as f:
          #f.write('{}, {} \n'.format(opt_answer_text_list[-1], rdm_answer_text_list[-1]))
          f.write('{} \n'.format(opt_answer_text_list[-1]))
+    with open(checkpoint_dir +'/rdm_quest.csv', 'a+') as f:
+        f.write('{}, {} \n'.format(rdm_quest[-1], rdm_quest[-1]))
+    with open(checkpoint_dir +'/rdm_quest_text.csv', 'a+') as f:
+         f.write('{}, {} \n'.format(rdm_quest_text[-1], rdm_quest_text[-1]))
+    with open(checkpoint_dir +'/rdm_answer_text.csv', 'a+') as f:
+         f.write('{} \n'.format(rdm_answer_text_list[-1]))
 with open(checkpoint_dir +'/summary.txt', 'w+') as f:
     f.write('Test set size: {} \n Probability of answering I dont know: {} \n Probability of giving 2 answers: {} Probability of giving 3 answers: {} \n'.format(size_test, p_idk, p_2a, p_3a))
     f.write('Avg number of questions for optimal {} \n'.format(np.mean(np.asarray(length_opt))))
