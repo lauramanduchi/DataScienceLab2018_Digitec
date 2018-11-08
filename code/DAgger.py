@@ -8,7 +8,8 @@ import numpy as np
 import algo_utils
 import MaxMI_Algo
 from init_dataframes import init_df
-from load_utils import *
+from load_utils import load_obj, save_obj
+from eliminate import max_eliminate_algorithm
 
 n_action = 1        # steer only (float, left and right 1 ~ -1)
 steps = 27        # maximum number of questions
@@ -31,6 +32,17 @@ tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on 
 
 FLAGS = tf.flags.FLAGS
 
+
+def get_data_from_teacher():
+    all_products = products_cat["ProductId"]
+    state_list = []
+    question_list = []
+    for y in all_products:
+        final_question_list = max_eliminate_algorithm(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text_df,
+                            threshold, y,  answers_y)
+
+
+    return state_list, question_list
 
 
 def get_next_question(state):
@@ -61,7 +73,7 @@ def get_onehot_state(state):
         if q in state[:,0]:
             a = state[np.where(state[:,0] == q),1]  #get answer from that question
             for a_h in all_a: #for all possible answers of q
-                if a_h == a:
+                if a_h in a:
                     onehot_state.append(1)
                 else:
                     onehot_state.append(0)
@@ -79,13 +91,19 @@ if __name__=='__main__':
         traffic_cat = load_obj('../data/traffic_table')
         purchased_cat = load_obj('../data/purchased_table')
         filters_def_dict = load_obj('../data/filters_def_dict')
+        type_filters = load_obj('../data/type_filters')
+        question_text_df = load_obj('../data/question_text_df')
+        answer_text = load_obj('../data/answer_text')
         print("Loaded datasets")
     except:
         print("Creating datasets...")
-        products_cat, traffic_cat, purchased_cat = init_df()
+        products_cat, traffic_cat, purchased_cat, filters_def_dict, type_filters, question_text_df, answer_text = init_df()
         save_obj(products_cat, '../data/products_table')
         save_obj(traffic_cat, '../data/traffic_table')
         save_obj(purchased_cat, '../data/purchased_table')
+        save_obj(type_filters, '../data/type_filters')
+        save_obj(question_text_df, '../data/question_text_df')
+        save_obj(answer_text, '../data/answer_text')
         print("Created datasets")
 
 
@@ -103,12 +121,12 @@ if __name__=='__main__':
     except:
         print("Data not found, asking the teacher to create it \n")
 
-        #state = np.array((n, 2)) [[q1,a1],[q2,a2], ...]
+        #state = {"q1":[a1,a2], "q2":[a3], ..}
         state_list, question_list = get_data_from_teacher()                                                   #TODO MEL
         #for all products run MaxMI and get the set of (state, question) it made
 
         print('Saving data')
-        tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list, name = '_tmp.npy')
+        tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list}, name = '_tmp.npy')
 
     ###===================== Pretrain model using data for demonstration
 

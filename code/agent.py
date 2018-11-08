@@ -4,6 +4,7 @@ import tensorflow as tf
 tf.flags.DEFINE_integer("hidden_units", 900, "number of hidden units for each layer (default: 900)")
 tf.flags.DEFINE_integer("n_layers", 5, "number of layers (default: 5)")
 tf.flags.DEFINE_float("learning_rate", 0.0001, "learning rate (default: 0.0001)")
+FLAGS = tf.flags.FLAGS
 
 class model(object):
     def __init__(self, number_filters, tot_answers):
@@ -12,9 +13,14 @@ class model(object):
         self.labels = tf.placeholder(name='labels', shape=None, dtype=tf.int32)
 
         # Create a list of layer sizes for our network
-        layer_sizes = [2] + [hidden_units] * (n_layers - 1)
+        layer_sizes = [2] + [FLAGS.hidden_units] * (FLAGS.n_layers - 1)
 
         # For each layer except the last define an affine transformation followed by a nonlinearity
+        hidden = tf.layers.dense(inputs=self.x, units=1024, activation=tf.nn.relu)
+        hidden2 = tf.layers.dense(inputs=hidden, units=300, activation=tf.nn.relu)
+        logits = tf.layers.dense(inputs=hidden2, units=number_filters)
+
+        """
         layer_output = self.x
         nonlinearity = tf.nn.relu
 
@@ -23,12 +29,14 @@ class model(object):
                 W = tf.get_variable(name='W' + str(i), shape=(in_size, out_size), dtype=tf.float32)
                 b = tf.get_variable(name='b' + str(i), shape=out_size, dtype=tf.float32)
                 layer_output = nonlinearity(tf.matmul(layer_output, W) + b)
-
+        
         # Compute 27 logits for a softmax layer
         with tf.variable_scope('softmax', reuse=None):
-            softmax_W = tf.get_variable(name='softmax_W', shape=(hidden_units, number_filters), dtype=tf.float32)
+            softmax_W = tf.get_variable(name='softmax_W', shape=(FLAGS.hidden_units, number_filters), dtype=tf.float32)
             softmax_b = tf.get_variable(name='softmax_b', shape=number_filters, dtype=tf.float32)
             logits = tf.matmul(layer_output, softmax_W) + softmax_b
+        
+        """
 
         # Instead of explicitly computing softmax, just pass logits to this loss functions
         # It will one loss per example so take the mean over the batch
