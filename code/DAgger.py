@@ -74,10 +74,17 @@ def get_onehot_state(state):
     questions = sorted(filters_def_dict.keys())
     onehot_state = []
     for q in questions:
-        all_a = sorted(filters_def_dict[q]) #get all sorted possible answers
+        print(q)
+        #get all sorted possible answers
+        if filters_def_dict[q].dtype == object:
+            all_a = sorted(filters_def_dict[q].item())
+        else:
+            all_a = sorted(filters_def_dict[q])
         # if q has been answered in state
-        if q in state[:,0]:
-            a = state[np.where(state[:,0] == q),1]  #get answer from that question
+        if q in state.keys():
+            a = state[q]  #get answers from that question
+            if not isinstance(a,list):
+                a = [a]
             for a_h in all_a: #for all possible answers of q
                 if a_h in a:
                     onehot_state.append(1)
@@ -86,6 +93,7 @@ def get_onehot_state(state):
         # if q has NOT been answered in state
         else:
             [onehot_state.append(0) for i in range(len(all_a))]
+    return onehot_state
 
 
 #to add option to choose whether to run MaxMI again or not (if they change catalogue)
