@@ -10,6 +10,7 @@ import MaxMI_Algo
 from init_dataframes import init_df
 from load_utils import load_obj, save_obj
 from eliminate import max_eliminate_algorithm
+from sampler import sample_answers
 
 n_action = 1        # steer only (float, left and right 1 ~ -1)
 steps = 27        # maximum number of questions
@@ -20,6 +21,7 @@ n_products = number_product()    #TO DO!!!
 
 # Data loading parameters
 tf.flags.DEFINE_string("data_file_path", "/data/sentences.eval", "Path to the test data. This data should be distinct from the training data.")
+tf.flags.DEFINE_integer("threshold", 50, "Length of the final subset of products")
 
 # Test parameters
 tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
@@ -34,14 +36,25 @@ FLAGS = tf.flags.FLAGS
 
 
 def get_data_from_teacher():
+    """ Compute the trajectory for all the products following the entropy principle, and divide them in states and actions.
+    Args:
+
+    Returns:
+        state_list (questions, answers made) and question_list (actions)
+    """
     all_products = products_cat["ProductId"]
     state_list = []
-    question_list = []
     for y in all_products:
-        final_question_list = max_eliminate_algorithm(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text_df,
-                            threshold, y,  answers_y)
-
-
+        answers_y = sample_answers(y, products_cat)
+        question_list, _, _, _, _ = max_eliminate_algorithm(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text,
+                            FLAGS.threshold, y,  answers_y)
+        #first state in state zero
+        history = {}
+        state_list.append(history)
+        for q in question_list:
+            answers = answers_y.get(q)
+            history[q] = answers
+            state_list.append(history)
     return state_list, question_list
 
 
@@ -69,13 +82,14 @@ def get_onehot_state(state):
     Args:
         state: {"q1":[a1,a2], "q2":[a3], ..}
     Returns:
-        next_question and boolean variable done
+        one-hot vector state ([0,0,1,1,0,0,...,0,0])
     """
     questions = sorted(filters_def_dict.keys())
     onehot_state = []
     for q in questions:
         print(q)
         #get all sorted possible answers
+        #some questions have an answer type object and other a normal array
         if filters_def_dict[q].dtype == object:
             all_a = sorted(filters_def_dict[q].item())
         else:
@@ -136,7 +150,7 @@ if __name__=='__main__':
         print("Data not found, asking the teacher to create it \n")
 
         #state = {"q1":[a1,a2], "q2":[a3], ..}
-        state_list, question_list = get_data_from_teacher()                                                   #TODO MEL
+        state_list, question_list = get_data_from_teacher()
         #for all products run MaxMI and get the set of (state, question) it made
 
         print('Saving data')
@@ -165,12 +179,13 @@ if __name__=='__main__':
         print("#" * 50)
         print("# Episode: %d start" % episode)
         y = np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = 1)[0]
+        answers_y = sample_answers(y, products_cat)
         answer_list_y = sample_answers(y, products_cat) # dict {'q1': [a1], 'q2': [a2, a3]}
-        state = []
+        state = {}
         while True:
             q = model.predict(state)     #test the model for input state
-            a = get_answer(q, y)                                #TODO MEL
-            state.append([q, a])
+            answers = answers_y.get(q)
+            state[q] = answers
             q_true, done = get_next_question(state)
             if done is True:
              break

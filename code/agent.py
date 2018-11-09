@@ -17,7 +17,7 @@ class model(object):
 
         # For each layer except the last define an affine transformation followed by a nonlinearity
         hidden = tf.layers.dense(inputs=self.x, units=1024, activation=tf.nn.relu)
-        hidden2 = tf.layers.dense(inputs=hidden, units=300, activation=tf.nn.relu)
+        hidden2 = tf.layers.dense(inputs=hidden, units=256, activation=tf.nn.relu)
         logits = tf.layers.dense(inputs=hidden2, units=number_filters)
 
         """
