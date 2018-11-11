@@ -52,13 +52,18 @@ def get_distinct_products(product_set):
     return distinct_p
 
 
-'''Our algorith which returns:
- 1) sequence of question to ask
- 2) final product list
- 3) y chosen as input of algo'''
 
 def max_eliminate_algorithm(product_set, traffic_set, purchased_set, question_text_df, answer_text_df,
                             threshold, y,  answers_y):
+    '''
+
+    :param threshold: Max number of products we want in final selection
+    :param y: Target product
+    :param answers_y: All property values of target product
+    :return:    1) sequence of question to ask
+                2) final product list
+                3) y chosen as input of algo
+    '''
     question_set = set(algo_utils.get_questions(product_set))
     final_question_list=[]
     final_question_text_list=[]
@@ -90,4 +95,54 @@ def max_eliminate_algorithm(product_set, traffic_set, purchased_set, question_te
         print("There are {} possible products to choose from".format(len(get_distinct_products(product_set))))
         iter+=1
     return final_question_list, product_set, y, final_question_text_list, answer_text_list
+
+
+#TODO Remove Threshold
+#TODO
+def opt_step_random_start(state, product_set, traffic_set, purchased_set, question_text_df, answer_text_df,
+                            threshold, y,  answers_y):
+    '''
+    Modified version of the max_eliminate_algorithm to allow for start at a given state
+
+    :param state: dictionnary of the form ['q1': [a1, a2], 'q2':[b1],  ...]
+    :return: next question to be asked
+    '''
+
+    # Updating product_set, traffic_set, purchased_set
+    for question in state.keys():
+        for answer in state[question]:
+            product_set, traffic_set, purchased_set = algo_utils.select_subset(question=question,
+                                                                       answer=answer,
+                                                                       product_set=product_set,
+                                                                       traffic_set=traffic_set,
+                                                                       purchased_set=purchased_set)
+    question_set = set(algo_utils.get_questions(product_set))
+    next_question = opt_step(question_set, product_set, traffic_set, purchased_set)
+    next_question = int(next_question)
+    print("Next question is filter : {}".format(next_question))
+    question_text = question_id_to_text(next_question, question_text_df)
+    print("Question is: {}".format(question_text))
+    return next_question
+
+
+if __name__ == '__main__':
+    import numpy as np
+
+    x = np.asarray([2, 3, 1, 0, 9, 0, 8, 6, 5, 4, 8, 0, 0, 0, 0, 0,1])
+    print(x)
+    for i in np.argwhere(x > 1):
+        print(i)
+    print(np.argwhere(x > 1))
+    q10a1=12
+    q10a2=3
+    q3b1=9
+    q1e4=80
+    q1b4=61
+    q1a1=13
+
+    state = {'q10': [q10a1, q10a2], 'q3': [q3b1], 'q1': [q1e4, q1b4, q1a1]}
+    print(state)
+    for question in state.keys():
+        for answer in state[question]:
+            print(answer)
 
