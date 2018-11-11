@@ -40,7 +40,7 @@ def create_categories(df_category):
         elif (len(values_defOpt)==0 and len(valuesProp)>0): 
             # case only value ids
             if len(valuesProp) > 10:
-                _, bins = np.histogram(valuesProp)
+                bins = np.percentile(valuesProp, [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
                 result.update({str(f): bins})
                 type_filters.update({str(f): 'bin'})
                 q+=1
@@ -96,7 +96,11 @@ def map_text_new_answer(df, answer_text_df, type_filters, filters_def_dict):
     for i in df.index.values:
         filter = df.loc[i, "PropertyDefinitionId"] 
         if (type_filters[str(filter)]=='option' or type_filters[str(filter)]=='mixed'):
-            text_answers.append(answer_text_df.loc[answer_text_df["PropertyDefinitionOptionId"] == str(int(i))]["PropertyDefinitionOption"])
+            if len(answer_text_df.loc[answer_text_df["PropertyDefinitionOptionId"] == str(int(df.loc[i, "answer"])),"PropertyDefinitionOption"].values) == 0:
+                text_answers.append(str(df.loc[i, "answer"]))
+            else:
+                text_answers.append(answer_text_df.loc[answer_text_df["PropertyDefinitionOptionId"] == str(int(df.loc[i, "answer"])),"PropertyDefinitionOption"].values[0])
+                #print(answer_text_df.loc[answer_text_df["PropertyDefinitionOptionId"] == str(int(df.loc[i, "answer"])),"PropertyDefinitionOption"].values[0])
         elif type_filters[str(filter)]=='bin':
             bins = filters_def_dict[str(filter)]
             idx = np.where(bins == df.loc[i, "answer"])[0]
@@ -105,6 +109,8 @@ def map_text_new_answer(df, answer_text_df, type_filters, filters_def_dict):
             except(IndexError):
                 my_string = 'over {}'.format(bins[idx])
             text_answers.append(my_string)
+        else:
+            text_answers.append(str(df.loc[i, "answer"]))
     return(text_answers)
 
 def filters_answers_per_requestURL(RequestUrl):

@@ -12,10 +12,8 @@ from build_answers_utils import question_id_to_text, answer_id_to_text
 
 
 
-# IDEAS TO IMPROVE
+# TODO LATER ! IDEAS TO IMPROVE
 # we can weight the filter by history usage (to avoid having bad filters as first questions)
-# take our ideas from the first baseline
-# check how idk is handled in get proba Q
 
 def expectation_eliminate(question, product_set, traffic_cat): 
     proba_Q = algo_utils.get_proba_Q_distribution_none(question, product_set, traffic_cat)
@@ -23,8 +21,7 @@ def expectation_eliminate(question, product_set, traffic_cat):
     proba_Q["eliminate"]=0
     for answer in possible_answers:
         tmp = algo_utils.select_subset(product_set, question=question, answer=np.asarray([answer]))[0]
-        proba_Q.loc[answer, "eliminate"] = 1-len(get_distinct_products(tmp))/len(get_distinct_products(product_set))
-        # 1 - prop_kept = prop_eliminate
+        proba_Q.loc[answer, "eliminate"] = 1-len(get_distinct_products(tmp))/len(get_distinct_products(product_set)) # 1 - prop_kept = prop_eliminate
     prop = np.sum(proba_Q["final_proba"]*proba_Q["eliminate"])
     return (prop)
 
@@ -41,7 +38,6 @@ def opt_step(question_set, product_set, traffic_set, purchased_set):
     MI_matrix[:,1] = mutual_array
     next_question_index = np.argmax(MI_matrix, axis=0)[1]
     next_question = MI_matrix[next_question_index, 0]
-    # print(next_question)
     return next_question
 
 def get_distinct_products(product_set):

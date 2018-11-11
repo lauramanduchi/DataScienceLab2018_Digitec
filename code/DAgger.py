@@ -8,7 +8,9 @@ import numpy as np
 import algo_utils
 import MaxMI_Algo
 from init_dataframes import init_df
-from load_utils import *
+from load_utils import load_obj, save_obj
+from eliminate import max_eliminate_algorithm
+from sampler import sample_answers
 
 n_action = 1        # steer only (float, left and right 1 ~ -1)
 steps = 27        # maximum number of questions
@@ -19,6 +21,7 @@ n_products = number_product()    #TO DO!!!
 
 # Data loading parameters
 tf.flags.DEFINE_string("data_file_path", "/data/sentences.eval", "Path to the test data. This data should be distinct from the training data.")
+tf.flags.DEFINE_integer("threshold", 50, "Length of the final subset of products")
 
 # Test parameters
 tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
@@ -31,6 +34,28 @@ tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on 
 
 FLAGS = tf.flags.FLAGS
 
+
+def get_data_from_teacher():
+    """ Compute the trajectory for all the products following the entropy principle, and divide them in states and actions.
+    Args:
+
+    Returns:
+        state_list (questions, answers made) and question_list (actions)
+    """
+    all_products = products_cat["ProductId"]
+    state_list = []
+    for y in all_products:
+        answers_y = sample_answers(y, products_cat)
+        question_list, _, _, _, _ = max_eliminate_algorithm(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text,
+                            FLAGS.threshold, y,  answers_y)
+        #first state in state zero
+        history = {}
+        state_list.append(history)
+        for q in question_list:
+            answers = answers_y.get(q)
+            history[q] = answers
+            state_list.append(history)
+    return state_list, question_list
 
 
 def get_next_question(state):
@@ -53,21 +78,36 @@ def get_next_question(state):
 
 
 def get_onehot_state(state):
+    """ Compute the one-hot vector state from state.
+    Args:
+        state: {"q1":[a1,a2], "q2":[a3], ..}
+    Returns:
+        one-hot vector state ([0,0,1,1,0,0,...,0,0])
+    """
     questions = sorted(filters_def_dict.keys())
     onehot_state = []
     for q in questions:
-        all_a = sorted(filters_def_dict[q]) #get all sorted possible answers
+        print(q)
+        #get all sorted possible answers
+        #some questions have an answer type object and other a normal array
+        if filters_def_dict[q].dtype == object:
+            all_a = sorted(filters_def_dict[q].item())
+        else:
+            all_a = sorted(filters_def_dict[q])
         # if q has been answered in state
-        if q in state[:,0]:
-            a = state[np.where(state[:,0] == q),1]  #get answer from that question
+        if q in state.keys():
+            a = state[q]  #get answers from that question
+            if not isinstance(a,list):
+                a = [a]
             for a_h in all_a: #for all possible answers of q
-                if a_h == a:
+                if a_h in a:
                     onehot_state.append(1)
                 else:
                     onehot_state.append(0)
         # if q has NOT been answered in state
         else:
             [onehot_state.append(0) for i in range(len(all_a))]
+    return onehot_state
 
 
 #to add option to choose whether to run MaxMI again or not (if they change catalogue)
@@ -79,13 +119,19 @@ if __name__=='__main__':
         traffic_cat = load_obj('../data/traffic_table')
         purchased_cat = load_obj('../data/purchased_table')
         filters_def_dict = load_obj('../data/filters_def_dict')
+        type_filters = load_obj('../data/type_filters')
+        question_text_df = load_obj('../data/question_text_df')
+        answer_text = load_obj('../data/answer_text')
         print("Loaded datasets")
     except:
         print("Creating datasets...")
-        products_cat, traffic_cat, purchased_cat = init_df()
+        products_cat, traffic_cat, purchased_cat, filters_def_dict, type_filters, question_text_df, answer_text = init_df()
         save_obj(products_cat, '../data/products_table')
         save_obj(traffic_cat, '../data/traffic_table')
         save_obj(purchased_cat, '../data/purchased_table')
+        save_obj(type_filters, '../data/type_filters')
+        save_obj(question_text_df, '../data/question_text_df')
+        save_obj(answer_text, '../data/answer_text')
         print("Created datasets")
 
 
@@ -103,12 +149,12 @@ if __name__=='__main__':
     except:
         print("Data not found, asking the teacher to create it \n")
 
-        #state = np.array((n, 2)) [[q1,a1],[q2,a2], ...]
-        state_list, question_list = get_data_from_teacher()                                                   #TODO MEL
+        #state = {"q1":[a1,a2], "q2":[a3], ..}
+        state_list, question_list = get_data_from_teacher()
         #for all products run MaxMI and get the set of (state, question) it made
 
         print('Saving data')
-        tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list, name = '_tmp.npy')
+        tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list}, name = '_tmp.npy')
 
     ###===================== Pretrain model using data for demonstration
 
@@ -132,12 +178,14 @@ if __name__=='__main__':
         # restart the game for every episode
         print("#" * 50)
         print("# Episode: %d start" % episode)
-        y = randint(1, n_products)
-        state = []
+        y = np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = 1)[0]
+        answers_y = sample_answers(y, products_cat)
+        answer_list_y = sample_answers(y, products_cat) # dict {'q1': [a1], 'q2': [a2, a3]}
+        state = {}
         while True:
             q = model.predict(state)     #test the model for input state
-            a = get_answer(q, y)                                #TODO MEL
-            state.append([q, a])
+            answers = answers_y.get(q)
+            state[q] = answers
             q_true, done = get_next_question(state)
             if done is True:
              break
