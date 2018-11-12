@@ -3,6 +3,13 @@
 import pandas as pd
 import numpy as np 
 
+def get_distinct_products(product_set):
+    try:
+        distinct_p = product_set.ProductId.unique()
+    except AttributeError:
+        print("'ProductId' is not a valid column in Product_set, rename it!")
+    return distinct_p
+
 def select_subset(product_set, traffic_set = [], question = None, answer = None, purchased_set = []):
     """
     function assumes you have already build the answer column

@@ -1,13 +1,19 @@
+import sys
+import os.path
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
 import time
-import os
 import numpy as np
-from load_utils import *
-from MaxMI_Algo import max_info_algorithm
-from RandomBaseline import random_baseline, get_distinct_products
 import pandas as pd
-import logging 
-from init_dataframes import init_df
-import algo_utils
+
+from utils.load_utils import *
+from greedy.MaxMI_Algo import max_info_algorithm
+from greedy.RandomBaseline import random_baseline
+from utils.init_dataframes import init_df
+import utils.algo_utils
+from utils.algo_utils import get_distinct_products
+
 try:
     products_cat = load_obj('../data/products_table')
     traffic_cat = load_obj('../data/traffic_table')

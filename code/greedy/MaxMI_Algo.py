@@ -1,14 +1,22 @@
 '''
 # At every answer node, Compute I(X_e,Y;phi_l) and Choose X_e tlq Mututal Information is maximized
 '''
-from load_utils import *
+
+import sys
+import os.path
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
 import random
 import numpy as np
 import pandas as pd
-from init_dataframes import init_df
-import algo_utils
 import parmap
 import time
+
+from utils.load_utils import *
+from utils.init_dataframes import init_df
+import utils.algo_utils as algo_utils
+
 
 # about parmap 
 #y = [myfunction(x, argument1, mykeyword=argument2) for x in mylist]

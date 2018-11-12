@@ -1,8 +1,14 @@
-from load_utils import *
-import numpy as np
-import algo_utils
+import sys
+import os.path
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
 import parmap
-from build_answers_utils import question_id_to_text, answer_id_to_text
+import numpy as np
+
+from utils.load_utils import *
+import utils.algo_utils as algo_utils
+from utils.build_answers_utils import question_id_to_text, answer_id_to_text
 
 
 # about parmap
@@ -77,7 +83,7 @@ def max_eliminate_algorithm(product_set, traffic_set, purchased_set, question_te
         final_question_list.append(int(next_question))
         final_question_text_list.append(question_text)
         answer = answers_y.get(next_question)
-        answer_text = answer_id_to_text(answer, answer_text_df)
+        answer_text = answer_id_to_text(answer, next_question, answer_text_df)
         print("Answer given was: {}".format(answer))
         print("Answer was: {}".format(answer_text))
         answer_text_list.append(answer_text)

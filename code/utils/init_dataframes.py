@@ -5,9 +5,10 @@ from sqlalchemy import create_engine,text
 import pandas as pd
 import numpy as np
 import time
-from parser import parse_query_string
-from build_answers_utils import keep_only_useful_URLs, create_categories, eliminate_filters_no_answers, map_origAnswer_newAnswer, process_all_traffic_answers, map_text_new_answer
-from load_utils import load_obj, save_obj, batch
+
+from utils.parser import parse_query_string
+from utils.build_answers_utils import keep_only_useful_URLs, create_categories, eliminate_filters_no_answers, map_origAnswer_newAnswer, process_all_traffic_answers, map_text_new_answer
+from utils.load_utils import load_obj, save_obj, batch
         
 def init_df():
     # ------------------- DATABASE SETUP ------------- #

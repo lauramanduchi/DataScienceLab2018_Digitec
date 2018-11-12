@@ -1,9 +1,15 @@
+import sys
+import os.path
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 
 import tensorflow as tf
-import numpy as np
-import os
-import time
 import datetime
+import time
+import sys
+import numpy as np
+
+from dagger.agent import model
 		
 ## PARAMETERS ##
 

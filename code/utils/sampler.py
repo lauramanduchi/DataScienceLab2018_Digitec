@@ -1,11 +1,10 @@
 import numpy as np
 import pandas as pd
-import algo_utils
+
 import random
 import os
-from load_utils import *
-from RandomBaseline import  get_distinct_products
-from init_dataframes import init_df
+from utils.load_utils import *
+import utils.algo_utils as algo_utils
 
 
 def get_all_answers(question, product_set):
@@ -43,6 +42,7 @@ def sample_answers(y, product_set, p_idk = 0.1, p_2a = 0.3, p_3a = 0.15):
     return(result)
 
 if __name__=='__main__':
+    from init_dataframes import init_df
     try:
         products_cat = load_obj('../data/products_table')
         print("Loaded datsets")

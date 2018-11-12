@@ -1,52 +1,46 @@
-'''
-# At every answer node, Compute I(X_e,Y;phi_l) and Choose X_e tlq Mututal Information is maximized
-'''
-from load_utils import *
+import sys
+import os.path
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
 import random
 import numpy as np
 import pandas as pd
-from init_dataframes import init_df
-import algo_utils
-from user_utils import question_id_to_text, answer_id_to_text
 
-
-def get_distinct_products(product_set):
-    try:
-        distinct_p = product_set.ProductId.unique()
-    except AttributeError:
-        print("'ProductId' is not a valid column in Product_set, rename it!")
-    return distinct_p
-
+from utils.load_utils import *
+from utils.init_dataframes import init_df
+import utils.algo_utils as algo_utils
+import utils.build_answers_utils as build_answers_utils
+import utils.sampler as sampler
 
 '''Our algorith which returns:
  1) sequence of question to ask
  2) final product list
  3) y chosen as input of algo'''
-def random_baseline(product_set, traffic_set, purchased_set,  question_text_df, answer_text_df, threshold, y):
+def random_baseline(product_set, traffic_set, purchased_set, question_text_df, answer_text_df, threshold, y, answers_y):
     question_set = set(algo_utils.get_questions(product_set))
-    quest_answer_y = algo_utils.get_answers_y(y, product_set)
-    print(quest_answer_y)
+    quest_answer_y = answers_y
     final_question_list=[]
     final_question_text_list=[]
     answer_text_list = []
-    distinct_products = get_distinct_products(product_set)   
+    distinct_products = algo_utils.get_distinct_products(product_set)   
     while not (len(distinct_products) < threshold or len(question_set) == 0):   
-        next_question = np.random.choice(np.asarray(list(question_set)), size=1)[0
+        next_question = np.random.choice(np.asarray(list(question_set)), size=1)[0]
         next_question = int(next_question)
         print("Next question is filter : {}".format(next_question))
-        question_text = question_id_to_text(next_question, question_text_df)
+        question_text = build_answers_utils.question_id_to_text(next_question, question_text_df)
         print("Question is: {}".format(question_text))
         final_question_list.append(int(next_question))
         final_question_text_list.append(question_text)
         answer = quest_answer_y[int(next_question)]
-        answer_text = answer_id_to_text(answer, answer_text_df)
+        answer_text = build_answers_utils.answer_id_to_text(answer, next_question, answer_text_df)
         print("Answer given was: {}".format(answer))
         print("Answer was: {}".format(answer_text))
-        product_set, traffic_set, purchased_set = algo_utils.select_subset(question=int(next_question), answer=np.asarray([str(answer)]), product_set=product_set,traffic_set =traffic_set, purchased_set = purchased_set)
+        product_set, traffic_set, purchased_set = algo_utils.select_subset(question=int(next_question), answer=answer, product_set=product_set,traffic_set =traffic_set, purchased_set = purchased_set)
         #question_set_new = set(algo_utils.get_filters_remaining(product_set))
         question_set = question_set.difference(final_question_list) # s- t is written s.difference(t)
-        distinct_products = get_distinct_products(product_set) 
-        print('There are still {} products to choose from'.format(len(get_distinct_products(product_set))))
+        distinct_products = algo_utils.get_distinct_products(product_set) 
+        print('There are still {} products to choose from'.format(len(algo_utils.get_distinct_products(product_set))))
     return final_question_list, product_set, y, final_question_text_list, answer_text_list
 
 
@@ -56,6 +50,8 @@ if __name__=='__main__':
         products_cat = load_obj('../data/products_table')
         traffic_cat = load_obj('../data/traffic_table')
         purchased_cat = load_obj('../data/purchased_table')
+        question_text_df = load_obj('../data/question_text_df')
+        answer_text_df = load_obj('../data/answer_text')
         print("Loaded datsets")
     except:
         print("Creating datasets...")
@@ -66,7 +62,8 @@ if __name__=='__main__':
     print(products_cat["ProductId"].dtype) #int
     print(products_cat["PropertyDefinitionId"].dtype) #int
     print(products_cat["answer"].dtype) #float
-    final_question_list, product_set, y = random_baseline(products_cat, traffic_cat, purchased_cat, threshold, y)
+    answers_y = sampler.sample_answers(y, products_cat)
+    final_question_list, product_set, y, final_question_text_list, answer_text_list = random_baseline(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text_df, threshold, y, answers_y)
     print("final_question_list: ", final_question_list)
-    print("length final product set: ", len(get_distinct_products(product_set)))
+    print("length final product set: ", len(algo_utils.get_distinct_products(product_set)))
 

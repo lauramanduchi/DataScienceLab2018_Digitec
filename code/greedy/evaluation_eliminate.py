@@ -1,15 +1,21 @@
+import sys
+import os.path
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
 import time
 import os
 import numpy as np
-from load_utils import *
-from eliminate import max_eliminate_algorithm
-from RandomBaseline import random_baseline, get_distinct_products
 import pandas as pd
-from init_dataframes import init_df
-import algo_utils
 import argparse
-from sampler import sample_answers
 import warnings
+
+from utils.load_utils import *
+from utils.init_dataframes import init_df
+import utils.algo_utils as algo_utils
+from utils.sampler import sample_answers
+from greedy.eliminate import max_eliminate_algorithm
+from greedy.RandomBaseline import random_baseline
 
 # To remove future warning from being printed out
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -83,7 +89,7 @@ for y in y_array:
     opt_answer_text_list.append(answer_text_list)
     rb_final_question_list, rb_product_set, rb_y, \
     rb_final_question_text_list, rb_answer_text_list = random_baseline(products_cat, traffic_cat, purchased_cat,
-                                                                 question_text_df, answer_text_df, threshold, y)
+                                                                 question_text_df, answer_text_df, threshold, y, answers_y)
     length_rdm.append(len(rb_final_question_list))
     rdm_quest.append(rb_final_question_list)
     rdm_quest_text.append(rb_final_question_text_list)

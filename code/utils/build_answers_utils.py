@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
 import numpy as np
-from parser import parse_query_string
+
+from utils.parser import parse_query_string
+
+
 
 def keep_only_useful_URLs(df):
     new = df.copy()
@@ -261,7 +264,7 @@ def question_id_to_text(question, question_df):
         question_text = 'No text equivalent for question'
     return question_text
 
-def answer_id_to_text(answer, answer_df):
+def answer_id_to_text(answer, question, answer_df):
     answer_list = []
     for i in answer:
         if i == 'idk':
@@ -270,8 +273,36 @@ def answer_id_to_text(answer, answer_df):
             answer_list.append('none')
         else:
             try:
-                # answer_list.append(answer_df[answer_df["PropertyDefinitionOptionId"] == str(int(i))].iloc[0][0])
-                answer_list.append(answer_df[answer_df["PropertyDefinitionOptionId"] == str(int(i))]["PropertyDefinitionOption"].values[0])
-            except:
+                answer_list.append(answer_df.loc[(answer_df["answer_id"] == i) & (answer_df["question_id"] == question), "answer_text"].values[0])
+            except ValueError:
                 answer_list.append('Not found')
     return (answer_list)
+
+
+
+# To test some functions
+if __name__=='__main__':
+    from load_utils import load_obj
+    from sampler import sample_answers
+    try:
+        products_cat = load_obj('../data/products_table')
+        traffic_cat = load_obj('../data/traffic_table')
+        purchased_cat = load_obj('../data/purchased_table')
+        question_text_df = load_obj('../data/question_text_df')
+        answer_text = load_obj('../data/answer_text')
+        print("Loaded datsets")
+    except:
+        print("Creating datasets...")
+        #products_cat, traffic_cat, purchased_cat = init_df()
+
+    y = products_cat["ProductId"][10]
+    threshold = 50
+    print(products_cat["ProductId"].dtype) #int
+    print(products_cat["PropertyDefinitionId"].dtype) #int
+    print(products_cat["answer"].dtype) #float
+    answers_y = sample_answers(y, products_cat)
+    for key, answer in answers_y.items():
+        print(answer_id_to_text(answer, answer_text))
+    #final_question_list, product_set, y = random_baseline(products_cat, traffic_cat, purchased_cat, threshold, y)
+    #print("final_question_list: ", final_question_list)
+   # print("length final product set: ", len(get_distinct_products(product_set)))
