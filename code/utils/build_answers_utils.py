@@ -259,8 +259,8 @@ def process_all_traffic_answers(traffic_df, purchased_cat, filters_def_dict, typ
 
 def question_id_to_text(question, question_df):
     try:
-        question_text = question_df[question_df["PropertyDefinitionId"] == str(question)]["PropertyDefinition"].values[0]
-    except:
+        question_text = question_df.loc[question_df["PropertyDefinitionId"] == str(int(question)), "PropertyDefinition"].values[0]
+    except IndexError:
         question_text = 'No text equivalent for question'
     return question_text
 
@@ -302,7 +302,7 @@ if __name__=='__main__':
     print(products_cat["answer"].dtype) #float
     answers_y = sample_answers(y, products_cat)
     for key, answer in answers_y.items():
-        print(answer_id_to_text(answer, answer_text))
+        print(answer_id_to_text(answer, key, answer_text))
     #final_question_list, product_set, y = random_baseline(products_cat, traffic_cat, purchased_cat, threshold, y)
     #print("final_question_list: ", final_question_list)
    # print("length final product set: ", len(get_distinct_products(product_set)))

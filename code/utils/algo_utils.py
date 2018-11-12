@@ -14,30 +14,29 @@ def select_subset(product_set, traffic_set = [], question = None, answer = None,
     """
     function assumes you have already build the answer column
     """
+    all_products = set(product_set["ProductId"].values)
     if np.array_equal(["idk"], answer): # case i don't know the answer return everything
         return(product_set, traffic_set, [])
     else:
-        q_keep = set(product_set.loc[product_set["PropertyDefinitionId"]==int(question), "ProductId"].index.values) # had to remove this drop_duplicates() because it changed the index !!!!!!!
+        q_keep = set(product_set.loc[product_set["PropertyDefinitionId"]==int(question), "ProductId"].drop_duplicates().values) # had to remove this drop_duplicates() because it changed the index !!!!!!!
         if np.array_equal(["none"], answer):
-            total = q_keep
+            products_to_keep = q_keep
         else:
             a_keep = set()
             for a in answer:
-                a_keep = a_keep.union(set(product_set.loc[product_set["answer"].astype(str)==str(a), "ProductId"].index.values))
-            total = a_keep.intersection(q_keep)
-        products_to_keep = product_set.loc[total, "ProductId"].drop_duplicates().values
+                a_keep = a_keep.union(set(product_set.loc[product_set["answer"].astype(str)==str(a), "ProductId"].drop_duplicates().values))
+            products_to_keep = a_keep.intersection(q_keep)
         if np.array_equal(["none"], answer):
-            product_set = product_set.loc[product_set["ProductId"].isin(products_to_keep)==False,]
-            if len(traffic_set) != 0:
-                traffic_set = traffic_set.loc[traffic_set["Items_ProductId"].isin(products_to_keep)==False,]
-            if len(purchased_set) != 0:
-                purchased_set = purchased_set.loc[purchased_set["Items_ProductId"].isin(products_to_keep)==False,]
-        else:
-            product_set = product_set.loc[product_set["ProductId"].isin(products_to_keep),]
-            if len(traffic_set) != 0:
-                traffic_set = traffic_set.loc[traffic_set["Items_ProductId"].isin(products_to_keep),]
-            if len(purchased_set) != 0:
-                purchased_set = purchased_set.loc[purchased_set["Items_ProductId"].isin(products_to_keep),]
+            products_to_keep = all_products.difference(products_to_keep)
+        product_set = product_set.loc[product_set["ProductId"].isin(products_to_keep),]
+        if len(traffic_set) != 0:
+            traffic_set = traffic_set.loc[traffic_set["Items_ProductId"].isin(products_to_keep),]
+        if len(purchased_set) != 0:
+            purchased_set = purchased_set.loc[purchased_set["Items_ProductId"].isin(products_to_keep),]
+        if len(get_distinct_products(product_set))==0:
+            print('problem')
+            print(len(q_keep))
+            print(len(all_products))
         return(product_set, traffic_set, purchased_set)
 
 def get_proba_Y_distribution(products_cat, purchased_cat, alpha=1):
@@ -71,7 +70,7 @@ def get_answers_y(y, product_set):
     tmp = product_set.loc[product_set["ProductId"]==y,]
     res = {}
     for q in questions:
-        a = tmp.loc[product_set["PropertyDefinitionId"]==q,"answer"].values
+        a = tmp.loc[product_set["PropertyDefinitionId"]==int(q),"answer"].values
         if len(a)==0:
             res.update({q: 'none'})
         else:
@@ -121,8 +120,8 @@ def get_proba_Q_distribution_none(question, products_cat, traffic_processed, alp
                     distribution.loc[float(i), "history_proba"] = add_probas.loc[i]
     distribution["final_proba"] = distribution["history_proba"].values + alpha*distribution["catalog_proba"].values
     # add the idk case JUST FROM CATALOG
-    distribution.loc["none", "final_proba"] = nb_prod_without_answer/float(number_products_total)
-    #print(distribution["final_proba"])
+    if nb_prod_without_answer==0: # Only add None if it is a POSSIBLE ANSWER!!
+        distribution.loc["none", "final_proba"] = nb_prod_without_answer/float(number_products_total)
     # renormalize everything
     S = np.sum(distribution["final_proba"].values)
     distribution["final_proba"] = distribution["final_proba"]/S
