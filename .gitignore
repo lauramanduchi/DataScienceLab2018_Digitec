@@ -1,0 +1,5 @@
+/data/
+/runs_eliminate/
+/deprecated/
+*.pyc
+*.DS_Store
