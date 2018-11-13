@@ -172,7 +172,7 @@ if __name__=='__main__':
         #Get latest checkpoint of the net policy
         # TODO does not work i don't know why, try to find solution
         # latest = tf.train.latest_checkpoint(checkpoint_dir+'/') 
-        
+        print('Loading the latest model')
         # use latest checkpoint manually
         latest = out_dir+'/cp-0020.ckpt' 
         
@@ -230,7 +230,6 @@ if __name__=='__main__':
             # update state according to that prediction
             state[q_pred] = list(answers_to_pred) # this is the next input state
             print(state)
-            print(np.shape(one_hot_state_list))
         print("#" * 50)
         output_file.write('Episode: %02d\t Number or questions: %02d\n' % (episode, len(state)))
         
