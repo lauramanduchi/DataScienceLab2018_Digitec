@@ -168,7 +168,6 @@ def categorize(filtername, filters_def_dict, type_filters, min_value, max_value=
             return(np.nan)
         else:
             bins = filters_def_dict[filtername]
-            list_bins = []
             n = len(bins)
             if min_value > bins[n-1]:
                 return(np.nan)
@@ -274,7 +273,7 @@ def answer_id_to_text(answer, question, answer_df):
         else:
             try:
                 answer_list.append(answer_df.loc[(answer_df["answer_id"] == i) & (answer_df["question_id"] == question), "answer_text"].values[0])
-            except ValueError:
+            except IndexError:
                 answer_list.append('Not found')
     return (answer_list)
 

@@ -72,7 +72,8 @@ def get_answers_y(y, product_set):
     for q in questions:
         a = tmp.loc[product_set["PropertyDefinitionId"]==int(q),"answer"].values
         if len(a)==0:
-            res.update({q: 'none'})
+            #res.update({q: 'none'}) #TODO discuss on thursday to be sure what we do
+            res.update({q: 'idk'})
         else:
             res.update({q: a[0]})
     return(res)

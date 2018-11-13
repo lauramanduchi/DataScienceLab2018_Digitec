@@ -68,7 +68,7 @@ def opt_step(question_set, product_set, traffic_set, purchased_set):
     next_question_index = np.argmax(MI_matrix, axis=0)[1] 
     next_question = MI_matrix[next_question_index, 0]
     print(next_question)
-    return next_question
+    return int(next_question)
 
 def get_distinct_products(product_set):
     try:

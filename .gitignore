@@ -3,3 +3,10 @@
 /deprecated/
 *.pyc
 *.DS_Store
+/runs/
+runs_MaxMI/
+notebooks/.ipynb_checkpoints/
+code/.ipynb_checkpoints/
+.ipynb_checkpoints/
+code/utils/__pycache__/
+code/dagger/__pycache__/
