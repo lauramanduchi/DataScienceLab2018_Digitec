@@ -13,9 +13,8 @@ def create_model(number_filters, length_state, h1=128, h2=256):
         mask_input = keras.layers.Input(shape=(number_filters,), dtype='float32', name='mask_input')
         x = keras.layers.Dense(h1, activation=tf.nn.relu, input_shape=(length_state,))(main_input)
         x=keras.layers.Dense(h2, activation=tf.nn.relu)(x)
-        pre_logits=keras.layers.Dense(number_filters, activation=tf.nn.relu)(x) #relu to be sure the logits are positive
-        logits = keras.layers.Lambda(lambda x: x[0]*x[1])([pre_logits, mask_input])
-        out = keras.layers.Lambda(tf.nn.softmax)(logits)
+        probas =keras.layers.Dense(number_filters, activation=tf.nn.softmax)(x)
+        out = keras.layers.Lambda(lambda x: x[0]*x[1])([probas, mask_input]) #have to apply the mask AFTER softmax
 
         # Wrap in Keras model
         model =  keras.Model(inputs=[main_input, mask_input], outputs=out)

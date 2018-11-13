@@ -62,7 +62,7 @@ def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, question_tex
     all_questions_list = []
     #for y in all_products: # TODO just to debug remove the other line !!!!!
     for y in np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = 50):
-        answers_y = sampler.sample_answers(y, products_cat, p_idk=0.1, p_2a = 0.1, p_3a=0.1) 
+        answers_y = sample_answers(y, products_cat, p_idk=0.1, p_2a = 0.1, p_3a=0.1) 
         question_list, _, _, _, _ = max_info_algorithm(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text,
                             threshold, y,  answers_y)
         #question_list, _, _, _, _ = max_eliminate_algorithm(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text,

@@ -133,6 +133,7 @@ if __name__=='__main__':
         # add to data
         onehot_state_list.append(np.asarray(onehot_state))
         mask_list.append(mask)
+    
     one_hot_state_list = np.asarray(onehot_state_list[:-1])
     mask_list = np.asarray(mask_list[:-1])
     
@@ -221,8 +222,9 @@ if __name__=='__main__':
                     one_hot_labels = np.append(one_hot_labels, dagger_utils.get_onehot_question([q_true], filters_def_dict)[0])
             
             # get predicted question from model for current state
-            logits = model.predict([np.reshape(onehot_state, (1,-1)), np.reshape(mask, (1,-1))])[0] #predict the one-hot label
-            onehot_prediction = np.argmax(logits)
+            probas = model.predict([np.reshape(onehot_state, (1,-1)), np.reshape(mask, (1,-1))])[0] #predict the one-hot label
+            print(probas)
+            onehot_prediction = np.argmax(probas)
             print(onehot_prediction)
             q_pred = sorted(filters_def_dict.keys())[onehot_prediction] # get the question number
             answers_to_pred = answers_y.get(int(q_pred))
