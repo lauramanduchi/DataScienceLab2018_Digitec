@@ -193,7 +193,6 @@ if __name__=='__main__':
 
         #loop until end of the episode
         while True: 
-            
             # get list of questions already asked
             question_asked = state.keys()
             # to one-hot
@@ -238,7 +237,7 @@ if __name__=='__main__':
                                 one_hot_labels,
                                 epochs=FLAGS.n_epochs,
                                 batch_size=FLAGS.batch_size,
-                                validation_split=FLAGS.val_split, #or validation_data=(val_state, val_labels),
+                                validation_split=FLAGS.val_split,
                                 verbose=2,
                                 callbacks = [cp_callback])
         
