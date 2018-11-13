@@ -214,7 +214,6 @@ if __name__=='__main__':
             
                 # get the question that the teacher would have asked to current state
                 # and this question to training data
-                print('here', state)
                 q_true, done = dagger_utils.get_next_question_opt(state, products_cat, traffic_cat, purchased_cat, FLAGS.threshold)
                 if done is True:
                     break
@@ -225,7 +224,6 @@ if __name__=='__main__':
             probas = model.predict([np.reshape(onehot_state, (1,-1)), np.reshape(mask, (1,-1))])[0] #predict the one-hot label
             print(probas)
             onehot_prediction = np.argmax(probas)
-            print(onehot_prediction)
             q_pred = sorted(filters_def_dict.keys())[onehot_prediction] # get the question number
             answers_to_pred = answers_y.get(int(q_pred))
             
