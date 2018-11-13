@@ -29,7 +29,7 @@ tf.flags.DEFINE_integer("threshold", 50, "Length of the final subset of products
 
 # Test parameters
 tf.flags.DEFINE_integer("batch_size", 32, "Batch Size (default: 32)")
-tf.flags.DEFINE_float("val_split", 0.3, "Fraction used for validation during training")
+tf.flags.DEFINE_float("val_split", 0.1, "Fraction used for validation during training")
 tf.flags.DEFINE_integer("n_epochs", 20, "Number of epochs")
 tf.flags.DEFINE_integer("checkpoint_every", 100, "checkpoint every")
 #choose the best training checkpoint as a pretrained net
@@ -209,9 +209,9 @@ if __name__=='__main__':
             # if not first question add current mask and state to train data
             # not saving first question cause always the same for optimal with {} history
             if not state == {}:
-                one_hot_state_list = np.append(one_hot_state_list, onehot_state) # append the state s(t) to the training_set
-                mask_list = np.append(mask_list, mask)
-            
+                print(np.shape(one_hot_state_list))
+                one_hot_state_list = np.concatenate((one_hot_state_list, np.reshape(onehot_state, (1,-1)))) # append the state s(t) to the training_set
+                mask_list = np.concatenate((mask_list, np.reshape(mask, (1,-1))))
                 # get the question that the teacher would have asked to current state
                 # and this question to training data
                 q_true, done = dagger_utils.get_next_question_opt(state, products_cat, traffic_cat, purchased_cat, FLAGS.threshold)
@@ -230,7 +230,7 @@ if __name__=='__main__':
             # update state according to that prediction
             state[q_pred] = list(answers_to_pred) # this is the next input state
             print(state)
-
+            print(np.shape(one_hot_state_list))
         print("#" * 50)
         output_file.write('Episode: %02d\t Number or questions: %02d\n' % (episode, len(state)))
         
