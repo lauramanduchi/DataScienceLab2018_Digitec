@@ -31,6 +31,7 @@ tf.flags.DEFINE_integer("threshold", 50, "Length of the final subset of products
 tf.flags.DEFINE_integer("batch_size", 32, "Batch Size (default: 32)")
 tf.flags.DEFINE_float("val_split", 0.1, "Fraction used for validation during training")
 tf.flags.DEFINE_integer("n_epochs", 20, "Number of epochs")
+tf.flags.DEFINE_integer("n_episodes", 5, "Number of episodes")
 tf.flags.DEFINE_integer("checkpoint_every", 100, "checkpoint every")
 #choose the best training checkpoint as a pretrained net
 tf.flags.DEFINE_string("checkpoint_dir", "./runs/1523379413/checkpoints/", "Checkpoint directory from training run")
@@ -166,8 +167,9 @@ if __name__=='__main__':
 
     ###===================== Simulate from model and opt model and retrain at each episode
     output_file = open(checkpoint_dir+'/results/results.txt', 'w')
-    n_episode=1
-    for episode in range(n_episode):
+    n_episodes = FLAGS.n_episodes
+
+    for episode in range(n_episodes):
 
         #Get latest checkpoint of the net policy
         # TODO does not work i don't know why, try to find solution
@@ -233,13 +235,13 @@ if __name__=='__main__':
         output_file.write('Episode: %02d\t Number or questions: %02d\n' % (episode, len(state)))
         
         # At the end of the episode retrain the model with the new data.
-        model_history = model.fit(one_hot_state_list,
+        model_history = model.fit([one_hot_state_list[:-1], mask_list[:-1]], # last is not relevant for training (no label)
                                 one_hot_labels,
                                 epochs=FLAGS.n_epochs,
                                 batch_size=FLAGS.batch_size,
                                 validation_split=FLAGS.val_split,
                                 verbose=2,
-                                callbacks = [cp_callback])
+                                callbacks = [cp_callback]) # for now it is overwritting the preceding checkpoint
         
         # plot the new loss
         dagger_utils.plot_history(model_history)

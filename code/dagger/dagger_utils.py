@@ -14,6 +14,8 @@ from utils.init_dataframes import init_df
 from utils.load_utils import load_obj, save_obj
 from greedy.eliminate import max_eliminate_algorithm
 from greedy.MaxMI_Algo import max_info_algorithm
+from greedy.RandomBaseline import random_baseline
+import greedy.RandomBaseline as RandomBaseline
 import greedy.MaxMI_Algo as MaxMI
 import greedy.eliminate as eliminate
 from utils.sampler import sample_answers
@@ -45,7 +47,11 @@ def get_next_question_opt(state, product_set, traffic_set, purchased_set, thresh
     else:
         done = False
         #next_question = eliminate.opt_step(question_set, product_set, traffic_set, purchased_set)
+
         next_question = MaxMI.opt_step(question_set, product_set, traffic_set, purchased_set)
+        #for fast debug use randombaseline
+        #question_set = set(algo_utils.get_questions(product_set))
+        #next_question = int(np.random.choice(np.asarray(list(question_set)), size=1)[0])
     return next_question, done
 
 
@@ -65,6 +71,7 @@ def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, question_tex
         answers_y = sample_answers(y, products_cat, p_idk=0.1, p_2a = 0.1, p_3a=0.1) 
         question_list, _, _, _, _ = max_info_algorithm(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text,
                             threshold, y,  answers_y)
+        
         #question_list, _, _, _, _ = max_eliminate_algorithm(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text,
         #                   threshold, y,  answers_y) # question list is the full trajectory of chosen action until end of game
         # first state in state zero
