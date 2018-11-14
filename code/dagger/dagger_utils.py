@@ -83,7 +83,7 @@ def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, question_tex
             state_list.append(history)
             all_questions_list.append(q)
         #print(state_list) #MEL: just for testing purposes
-        print(len(get_products(state_list[-1], products_cat))[0]) #MEL: just for testing purposes
+        #print(len(get_products(state_list[-1], products_cat))) #MEL: just for testing purposes
     return state_list, all_questions_list
 
 
