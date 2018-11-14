@@ -272,9 +272,11 @@ def answer_id_to_text(answer, question, answer_df):
             answer_list.append('none')
         else:
             try:
-                answer_list.append(answer_df.loc[(answer_df["answer_id"] == i) & (answer_df["question_id"] == question), "answer_text"].values[0])
+                answer_list.append(answer_df.loc[(answer_df["answer_id"] == i) & (answer_df["question_id"] == int(question)), "answer_text"].astype(str).values[0])
+            except TypeError:
+                answer_list.append(i)
             except IndexError:
-                answer_list.append('Not found')
+                answer_list.append('Not Found')
     return (answer_list)
 
 
