@@ -75,7 +75,10 @@ def get_answers_y(y, product_set):
             #res.update({q: 'none'}) #TODO discuss on thursday to be sure what we do
             res.update({q: 'idk'})
         else:
-            res.update({q: a[0]})
+            if np.isnan(a[0]):
+                res.update({q: 'idk'})
+            else:
+                res.update({q: a[0]})
     return(res)
 
 def get_filters_remaining(dataset):
