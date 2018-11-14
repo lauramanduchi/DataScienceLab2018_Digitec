@@ -72,7 +72,7 @@ if __name__=='__main__':
     print('Collecting data from teacher (MaxMI) \n')
 
     try:
-        data = tl.files.load_npy_to_any(name='old_tmp.npy')
+        data = tl.files.load_npy_to_any(name='_tmp.npy')
         state_list = data['state_list']
         question_list = data['act']
         print('Data found') # MEL: last instruction otherwise always printed
