@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
 import numpy as np
-
 from utils.parser import parse_query_string
-
 
 
 def keep_only_useful_URLs(df):
