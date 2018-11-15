@@ -92,9 +92,8 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, question_text_df
     print("There are {} possible products to choose from".format(len(distinct_products)))
     iter = 1
 
-    ## to update later
-    """
-    next_question = 522
+    ##check sometimes
+    next_question = 347
     print("Next question is filter : {}".format(next_question))
     question_text = question_id_to_text(next_question, question_text_df)
     print("Question is: {}".format(question_text))
@@ -111,7 +110,6 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, question_text_df
     distinct_products = get_distinct_products(product_set)
     print("There are {} more questions we can ask".format(len(question_set)))
     print("There are {} possible products to choose from".format(len(get_distinct_products(product_set))))
-"""
     iter+=1    
     while not (len(distinct_products) < threshold or len(question_set) == 0):
         next_question = opt_step(question_set, product_set, traffic_set, purchased_set)
