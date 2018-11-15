@@ -44,7 +44,7 @@ def conditional_entropy(answer, question, product_set, traffic_set, purchased_se
 
 def mutual_inf(question, product_set, traffic_set, purchased_set):
     short_mutual_info = 0
-    proba_Q = algo_utils.get_proba_Q_distribution_none(question, product_set, traffic_set, alpha=1)["final_proba"]
+    proba_Q = algo_utils.get_proba_A_distribution_none(question, product_set, traffic_set, alpha=1)["final_proba"]
     possible_answers = proba_Q.index
     for answer in possible_answers:
         short_mutual_info += proba_Q.loc[answer]* \

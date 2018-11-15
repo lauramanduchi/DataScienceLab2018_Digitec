@@ -22,7 +22,7 @@ from utils.build_answers_utils import question_id_to_text, answer_id_to_text
 # we can weight the filter by history usage (to avoid having bad filters as first questions)
 
 def expectation_eliminate(question, product_set, traffic_cat): 
-    proba_Q = algo_utils.get_proba_Q_distribution_none(question, product_set, traffic_cat)
+    proba_Q = algo_utils.get_proba_A_distribution_none(question, product_set, traffic_cat)
     possible_answers = proba_Q.index
     proba_Q["eliminate"]=0
     for answer in possible_answers:
