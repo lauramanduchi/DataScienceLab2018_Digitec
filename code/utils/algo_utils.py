@@ -85,7 +85,7 @@ def get_filters_remaining(dataset):
     return(dataset["PropertyDefinitionId"].drop_duplicates().values)
     
 
-def get_proba_Q_distribution_none(question, products_cat, traffic_processed, alpha=1):
+def get_proba_A_distribution_none(question, products_cat, traffic_processed, alpha=1):
     """
     assumes answer is already constructed
     """
