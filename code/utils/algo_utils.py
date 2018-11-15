@@ -102,8 +102,7 @@ def get_proba_Q_distribution_none(question, products_cat, traffic_processed, alp
         nb_prod_per_answer.append(len(select_subset(products_cat, [], question, np.asarray([a]))[0]["ProductId"].drop_duplicates().values))
     distribution["nb_prod"] = nb_prod_per_answer
     distribution.index = possible_answers #type float64
-    nb_prod_without_answer = len(products_cat.loc[products_cat["PropertyDefinitionId"].isin([int(question)])==False, "ProductId"] \
-                                    .drop_duplicates().values) # new
+    nb_prod_without_answer = len(products_cat.loc[products_cat["PropertyDefinitionId"].isin(int(question))==False, "ProductId"].drop_duplicates().values) # new
     distribution["catalog_proba"] = np.asarray(nb_prod_per_answer)/float(number_products_total) # new
     #step 2: add the history if available just for KNOWN answers
     distribution["history_proba"] = 0
@@ -125,8 +124,9 @@ def get_proba_Q_distribution_none(question, products_cat, traffic_processed, alp
     distribution["final_proba"] = distribution["history_proba"].values + alpha*distribution["catalog_proba"].values
     # add the idk case JUST FROM CATALOG
     if nb_prod_without_answer==0: # Only add None if it is a POSSIBLE ANSWER!!
-        distribution.loc["none", "final_proba"] = nb_prod_without_answer/float(number_products_total)
+        distribution.loc["idk", "final_proba"] = nb_prod_without_answer/float(number_products_total)
     # renormalize everything
     S = np.sum(distribution["final_proba"].values)
     distribution["final_proba"] = distribution["final_proba"]/S
+    print(distribution)
     return(distribution)
