@@ -209,15 +209,15 @@ if __name__=='__main__':
             # if not first question add current mask and state to train data
             # not saving first question cause always the same for optimal with {} history
             if not state == {}:
-                print(np.shape(one_hot_state_list))
-                one_hot_state_list = np.concatenate((one_hot_state_list, np.reshape(onehot_state, (1,-1)))) # append the state s(t) to the training_set
-                mask_list = np.concatenate((mask_list, np.reshape(mask, (1,-1))))
                 # get the question that the teacher would have asked to current state
                 # and this question to training data
                 q_true, done = dagger_utils.get_next_question_opt(state, products_cat, traffic_cat, purchased_cat, FLAGS.threshold)
                 if done is True:
                     break
-                else:
+                else: 
+                    print(np.shape(one_hot_state_list))
+                    one_hot_state_list = np.concatenate((one_hot_state_list, np.reshape(onehot_state, (1,-1)))) # append the state s(t) to the training_set
+                    mask_list = np.concatenate((mask_list, np.reshape(mask, (1,-1))))
                     one_hot_labels = np.append(one_hot_labels, dagger_utils.get_onehot_question([q_true], filters_def_dict)[0])
             
             # get predicted question from model for current state
