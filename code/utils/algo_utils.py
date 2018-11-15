@@ -103,7 +103,6 @@ def get_proba_Q_distribution_none(question, products_cat, traffic_processed, alp
     distribution["nb_prod"] = nb_prod_per_answer
     distribution.index = possible_answers #type float64
     nb_prod_with_answer = len(products_cat.loc[products_cat["PropertyDefinitionId"]==int(question), "ProductId"].drop_duplicates().values) # new
-    print(nb_prod_with_answer)
     nb_prod_without_answer = number_products_total - nb_prod_with_answer
     distribution["catalog_proba"] = np.asarray(nb_prod_per_answer)/float(number_products_total) # new
     #step 2: add the history if available just for KNOWN answers
