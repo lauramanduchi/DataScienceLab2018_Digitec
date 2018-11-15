@@ -111,7 +111,6 @@ if __name__=='__main__':
                                                      period=10)
     
     ###===================== Initial training of the model using data from teaching
-    question_list = question_list[0] #TODO once we have full data remove this line (was wrongly saved but i corrected it)
     
     print('Converting labels to one hot')
     one_hot_labels = dagger_utils.get_onehot_question(question_list, filters_def_dict)
@@ -135,8 +134,8 @@ if __name__=='__main__':
         onehot_state_list.append(np.asarray(onehot_state))
         mask_list.append(mask)
     
-    one_hot_state_list = np.asarray(onehot_state_list[:-1])
-    mask_list = np.asarray(mask_list[:-1])
+    one_hot_state_list = np.asarray(onehot_state_list)
+    mask_list = np.asarray(mask_list)
     
     length_state = np.size(onehot_state_list[0])
     
@@ -235,7 +234,7 @@ if __name__=='__main__':
         output_file.write('Episode: %02d\t Number or questions: %02d\n' % (episode, len(state)))
         
         # At the end of the episode retrain the model with the new data.
-        model_history = model.fit([one_hot_state_list[:-1], mask_list[:-1]], # last is not relevant for training (no label)
+        model_history = model.fit([one_hot_state_list, mask_list], # last is not relevant for training (no label)
                                 one_hot_labels,
                                 epochs=FLAGS.n_epochs,
                                 batch_size=FLAGS.batch_size,
