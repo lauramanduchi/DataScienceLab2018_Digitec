@@ -21,6 +21,8 @@ def sample_answers(y, product_set, p_idk = 0.1, p_2a = 0.3, p_3a = 0.15):
            result[question] = ['idk'] 
         elif quest_answer_y[question]=='none': #if none you can't have a 2nd answer
             result[question] = [quest_answer_y[question]]
+        elif quest_answer_y[question]=='idk': #if none you can't have a 2nd answer
+            result[question] = [quest_answer_y[question]]
         elif u < p_idk+p_2a:
             possible = get_all_answers(question, product_set)
             sample = np.random.choice(possible, size=1)
