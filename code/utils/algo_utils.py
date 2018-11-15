@@ -129,5 +129,5 @@ def get_proba_Q_distribution_none(question, products_cat, traffic_processed, alp
     # renormalize everything
     S = np.sum(distribution["final_proba"].values)
     distribution["final_proba"] = distribution["final_proba"]/S
-    print(distribution)
+    #print(distribution)
     return(distribution)
