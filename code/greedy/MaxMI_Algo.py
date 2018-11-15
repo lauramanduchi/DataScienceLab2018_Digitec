@@ -100,7 +100,6 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, question_text_df
     print("Question is: {}".format(question_text))
     final_question_list.append(int(next_question))
     final_question_text_list.append(question_text)
-    final_question_list.append(int(next_question))
     answer = answers_y.get(next_question)
     answer_text = answer_id_to_text(answer, next_question, answer_text_df)
     print("Answer given was: {}".format(answer))
