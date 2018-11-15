@@ -29,7 +29,7 @@ def get_products(state, product_set, traffic_set=[], purchased_set=[]): #MEL: DO
     return result_df, traffic_set, purchased_set
 
 
-def get_next_question_opt(state, product_set, traffic_set, purchased_set, threshold): #TODO CHECK
+def get_next_question_opt(state, product_set, traffic_set, purchased_set, threshold):
     """ Compute the true next question, according to entropy principle, given the history of previous questions and answers.
     Args:
         state: {question1:answer1, question2: answer2, ...}
@@ -63,11 +63,11 @@ def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, question_tex
     Returns:
         state_list (questions, answers made) and question_list (actions)
     """
-    all_products = products_cat["ProductId"].drop_duplicates().values #MEL: changed drop_duplicates cause several lines per product
+    #all_products = products_cat["ProductId"].drop_duplicates().values #MEL: changed drop_duplicates cause several lines per product
     state_list = []
     all_questions_list = []
     #for y in all_products: # TODO just to debug remove the other line !!!!!
-    for y in np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = 50):
+    for y in np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = 2):
         answers_y = sample_answers(y, products_cat, p_idk=0.1, p_2a = 0.1, p_3a=0.1) 
         question_list, _, _, _, _ = max_info_algorithm(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text,
                             threshold, y,  answers_y)
@@ -82,8 +82,7 @@ def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, question_tex
             history[q] = answers
             state_list.append(history)
             all_questions_list.append(q)
-
-        all_questions_list.append(q[-1])
+        all_questions_list.append(question_list[-1])
         #print(state_list) #MEL: just for testing purposes
         #print(len(get_products(state_list[-1], products_cat))) #MEL: just for testing purposes
     return state_list, all_questions_list
