@@ -47,7 +47,6 @@ def get_next_question_opt(state, product_set, traffic_set, purchased_set, thresh
     else:
         done = False
         #next_question = eliminate.opt_step(question_set, product_set, traffic_set, purchased_set)
-
         next_question = MaxMI.opt_step(question_set, product_set, traffic_set, purchased_set)
         #for fast debug use randombaseline
         #question_set = set(algo_utils.get_questions(product_set))
