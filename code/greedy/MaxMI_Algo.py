@@ -93,24 +93,42 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, question_text_df
     iter = 1
 
     ##check sometimes
-    next_question = 347
-    print("Next question is filter : {}".format(next_question))
-    question_text = question_id_to_text(next_question, question_text_df)
-    print("Question is: {}".format(question_text))
-    final_question_list.append(int(next_question))
-    final_question_text_list.append(question_text)
-    answer = answers_y.get(next_question)
-    answer_text = answer_id_to_text(answer, next_question, answer_text_df)
-    print("Answer given was: {}".format(answer))
-    print("Answer was: {}".format(answer_text))
-    answer_text_list.append(answer_text)    
-    product_set, traffic_set, purchased_set = algo_utils.select_subset(question=next_question, answer=answer, product_set=product_set, traffic_set =traffic_set, purchased_set = purchased_set)
-    question_set_new = set(algo_utils.get_filters_remaining(product_set)) 
-    question_set = question_set_new.difference(final_question_list)
-    distinct_products = get_distinct_products(product_set)
-    print("There are {} more questions we can ask".format(len(question_set)))
-    print("There are {} possible products to choose from".format(len(get_distinct_products(product_set))))
-    iter+=1    
+    #next_question = 347
+    first_questions = []
+    first_question_set = question_set
+    n_first_q = 2
+    print("Optimization: computing first {} questions".format(n_first_q))
+    for i in range(n_first_q):
+        first_question = opt_step(first_question_set, product_set, traffic_set, purchased_set)
+        first_questions.append(first_question)
+        first_question_set = first_question_set.difference(set(first_questions))
+
+    idk = True
+    i = 0
+    while(idk):
+
+        next_question = first_questions[i]
+        i += 1
+        print("Next question is filter : {}".format(next_question))
+        question_text = question_id_to_text(next_question, question_text_df)
+        print("Question is: {}".format(question_text))
+        final_question_list.append(int(next_question))
+        final_question_text_list.append(question_text)
+        answer = answers_y.get(next_question)
+        if not answer == ["idk"]:
+            idk = False
+        answer_text = answer_id_to_text(answer, next_question, answer_text_df)
+        print("Answer given was: {}".format(answer))
+        print("Answer was: {}".format(answer_text))
+        answer_text_list.append(answer_text)
+        product_set, traffic_set, purchased_set = algo_utils.select_subset(question=next_question, answer=answer, product_set=product_set, traffic_set =traffic_set, purchased_set = purchased_set)
+        question_set_new = set(algo_utils.get_filters_remaining(product_set))
+        question_set = question_set_new.difference(final_question_list)
+        distinct_products = get_distinct_products(product_set)
+        print("There are {} more questions we can ask".format(len(question_set)))
+        print("There are {} possible products to choose from".format(len(get_distinct_products(product_set))))
+        iter+=1
+
     while not (len(distinct_products) < threshold or len(question_set) == 0):
         next_question = opt_step(question_set, product_set, traffic_set, purchased_set)
         print("Next question is filter : {}".format(next_question))
