@@ -77,11 +77,13 @@ def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, question_tex
         # first state in state zero
         history = {}
         state_list.append(history)
-        for q in question_list:
+        for q in question_list[: -1]:
             answers = answers_y.get(q)
             history[q] = answers
             state_list.append(history)
             all_questions_list.append(q)
+
+        all_questions_list.append(q[-1])
         #print(state_list) #MEL: just for testing purposes
         #print(len(get_products(state_list[-1], products_cat))) #MEL: just for testing purposes
     return state_list, all_questions_list
