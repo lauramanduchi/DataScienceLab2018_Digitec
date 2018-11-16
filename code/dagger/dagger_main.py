@@ -31,10 +31,8 @@ tf.flags.DEFINE_integer("threshold", 50, "Length of the final subset of products
 tf.flags.DEFINE_integer("batch_size", 32, "Batch Size (default: 32)")
 tf.flags.DEFINE_float("val_split", 0.1, "Fraction used for validation during training")
 tf.flags.DEFINE_integer("n_epochs", 20, "Number of epochs")
-tf.flags.DEFINE_integer("n_episodes", 5, "Number of episodes")
-tf.flags.DEFINE_integer("checkpoint_every", 100, "checkpoint every")
-#choose the best training checkpoint as a pretrained net
-tf.flags.DEFINE_string("checkpoint_dir", "./runs/1523379413/checkpoints/", "Checkpoint directory from training run")
+tf.flags.DEFINE_integer("n_episodes", 500, "Number of episodes")
+#tf.flags.DEFINE_integer("checkpoint_every", 100, "checkpoint every")
 
 # Tensorflow Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
@@ -75,7 +73,7 @@ if __name__=='__main__':
         data = tl.files.load_npy_to_any(name='_tmp.npy')
         state_list = data['state_list']
         question_list = data['act']
-        print('Data found') # MEL: last instruction otherwise always printed
+        print('Data found')
     except:
         print("Data not found, asking the teacher to create it \n")
 
@@ -102,7 +100,7 @@ if __name__=='__main__':
             os.makedirs(out_dir)
             os.makedirs(out_dir+'/results')
     print("Writing to {}\n".format(out_dir))
-    checkpoint_path = out_dir+"/cp-{epoch:04d}.ckpt"
+    checkpoint_path = out_dir+"/cp.ckpt"
     checkpoint_dir = os.path.dirname(checkpoint_path)
     # Create checkpoint callback for later saving of the model
     cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_path, 
@@ -159,10 +157,12 @@ if __name__=='__main__':
                                 verbose=2,
                                 callbacks = [cp_callback])
     # Print first training plots
-    dagger_utils.plot_history(model_history)
-    plt.savefig(checkpoint_dir+'/results/'+"plot-Init.png", dpi=900)
+    dagger_utils.plot_history(model_history, key='loss')
+    plt.savefig(checkpoint_dir+'/results/'+"loss-Init.png", dpi=900)
+    dagger_utils.plot_history(model_history, key='acc')
+    plt.savefig(checkpoint_dir+'/results/'+"acc-Init.png", dpi=900)
     #plt.show() # if you show the plot you have to manually close the window to resume the execution of the program.
-    
+    print(model_history.history.keys())
 
     ###===================== Simulate from model and opt model and retrain at each episode
     output_file = open(checkpoint_dir+'/results/results.txt', 'w')
@@ -175,7 +175,7 @@ if __name__=='__main__':
         # latest = tf.train.latest_checkpoint(checkpoint_dir+'/') 
         print('Loading the latest model')
         # use latest checkpoint manually
-        latest = out_dir+'/cp-0020.ckpt' 
+        latest = out_dir+'/cp.ckpt' 
         
         # restore the model from the checkpoint
         model = create_model(number_filters, length_state)
@@ -234,15 +234,19 @@ if __name__=='__main__':
         output_file.write('Episode: %02d\t Number or questions: %02d\n' % (episode, len(state)))
         
         # At the end of the episode retrain the model with the new data.
-        model_history = model.fit([one_hot_state_list, mask_list], # last is not relevant for training (no label)
-                                one_hot_labels,
-                                epochs=FLAGS.n_epochs,
-                                batch_size=FLAGS.batch_size,
-                                validation_split=FLAGS.val_split,
-                                verbose=2,
-                                callbacks = [cp_callback]) # for now it is overwritting the preceding checkpoint
+        # MEL: only retrain every 20 episodes
+        if (episode % 20==0):
+            model_history = model.fit([one_hot_state_list, mask_list], # last is not relevant for training (no label)
+                                    one_hot_labels,
+                                    epochs=FLAGS.n_epochs,
+                                    batch_size=FLAGS.batch_size,
+                                    validation_split=FLAGS.val_split,
+                                    verbose=2,
+                                    callbacks = [cp_callback]) # for now it is overwritting the preceding checkpoint
         
-        # plot the new loss
-        dagger_utils.plot_history(model_history)
-        plt.savefig(checkpoint_dir+'/results/'+"plot-E{}.png".format(episode), dpi=900) 
+            # plot the new loss
+            dagger_utils.plot_history(model_history, key='loss')
+            plt.savefig(checkpoint_dir+'/results/'+"loss-E{}.png".format(episode), dpi=900)
+            dagger_utils.plot_history(model_history, key='acc')
+            plt.savefig(checkpoint_dir+'/results/'+"acc-E{}.png".format(episode), dpi=900)
 
