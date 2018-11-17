@@ -101,7 +101,7 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, question_text_df
     #next_question = 347
     first_questions = []
     first_question_set = question_set
-    n_first_q = 1
+    n_first_q = 3
     print("Optimization: computing first {} questions".format(n_first_q))
     for i in range(n_first_q):
         first_question = opt_step(first_question_set, product_set, traffic_set, purchased_set, use_history, df_history, alpha)
@@ -110,7 +110,7 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, question_text_df
 
     idk = True
     i = 0
-    while(idk):
+    while(idk and i < n_first_q):
 
         next_question = first_questions[i]
         i += 1
