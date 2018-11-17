@@ -54,7 +54,7 @@ def mutual_inf(question, product_set, traffic_set, purchased_set):
 
 
 # Return question which maximizes MI
-def opt_step(question_set, product_set, traffic_set, purchased_set):
+def opt_step(question_set, product_set, traffic_set, purchased_set, use_history = False, df_history = 0, alpha = 2):
     MI_matrix = np.zeros([len(question_set), 2])
     mutual_array = np.asarray(parmap.map(mutual_inf, \
                                         question_set, \
@@ -65,6 +65,11 @@ def opt_step(question_set, product_set, traffic_set, purchased_set):
                                         pm_parallel=True))
     MI_matrix[:,0] = list(question_set)
     MI_matrix[:,1] = mutual_array
+
+    if use_history:
+        Q_distr = algo_utils.get_proba_Q_distribution(list(question_set), df_history, alpha)
+        MI_matrix[:, 1] = np.multiply(MI_matrix[:,1],Q_distr)
+
     next_question_index = np.argmax(MI_matrix, axis=0)[1] 
     next_question = MI_matrix[next_question_index, 0]
     print(next_question)
@@ -82,7 +87,7 @@ def get_distinct_products(product_set):
  1) sequence of question to ask
  2) final product list
  3) y chosen as input of algo'''
-def max_info_algorithm(product_set, traffic_set, purchased_set, question_text_df, answer_text_df, threshold, y, answers_y):
+def max_info_algorithm(product_set, traffic_set, purchased_set, question_text_df, answer_text_df, threshold, y, answers_y, use_history = False, df_history = 0, alpha = 2):
     question_set = set(algo_utils.get_questions(product_set))
     final_question_list=[]
     final_question_text_list=[]
@@ -96,10 +101,10 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, question_text_df
     #next_question = 347
     first_questions = []
     first_question_set = question_set
-    n_first_q = 2
+    n_first_q = 1
     print("Optimization: computing first {} questions".format(n_first_q))
     for i in range(n_first_q):
-        first_question = opt_step(first_question_set, product_set, traffic_set, purchased_set)
+        first_question = opt_step(first_question_set, product_set, traffic_set, purchased_set, use_history, df_history, alpha)
         first_questions.append(first_question)
         first_question_set = first_question_set.difference(set(first_questions))
 
@@ -130,7 +135,7 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, question_text_df
         iter+=1
 
     while not (len(distinct_products) < threshold or len(question_set) == 0):
-        next_question = opt_step(question_set, product_set, traffic_set, purchased_set)
+        next_question = opt_step(question_set, product_set, traffic_set, purchased_set, use_history, df_history, alpha)
         print("Next question is filter : {}".format(next_question))
         question_text = question_id_to_text(next_question, question_text_df)
         print("Question is: {}".format(question_text))
@@ -170,13 +175,31 @@ if __name__=='__main__':
         save_obj(question_text_df, '../data/question_text_df')
         save_obj(answer_text, '../data/answer_text')
         print("Created datasets")
-    
+
+    #uploading history from traffic_cat
+    try:
+        df_history = load_obj('../data/df_history')
+    except:
+        df_history = algo_utils.create_history(traffic_cat, question_text_df)
+        save_obj(df_history, '../data/df_history')
+        print("Created history")
+
+
     y = products_cat["ProductId"][10]
     answers_y = sample_answers(y, products_cat)
     threshold = 50
     start_time = time.time()
     print("Start time: {}".format(start_time))
-    final_question_list, product_set, y, final_question_text_list, answer_text_list = max_info_algorithm(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text_df, threshold, y, answers_y)
+    final_question_list, product_set, y, final_question_text_list, answer_text_list = max_info_algorithm(products_cat, \
+                                                                                                         traffic_cat, \
+                                                                                                         purchased_cat, \
+                                                                                                         question_text_df, \
+                                                                                                         answer_text_df, \
+                                                                                                         threshold, y, \
+                                                                                                         answers_y, \
+                                                                                                         use_history = True, \
+                                                                                                         df_history = df_history,
+                                                                                                         alpha = 2)
     end_time = time.time()
     print("final_question_list: ", final_question_list)
     print("length final product set: ", len(get_distinct_products(product_set)))

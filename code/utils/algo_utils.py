@@ -1,7 +1,32 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import pandas as pd
-import numpy as np 
+import numpy as np
+from utils.build_answers_utils import question_id_to_text
+
+
+def create_history(traffic_cat, question_text_df):
+    #Compute the list of all the filters used in history
+    list_filters_used = []
+    i = 0
+    for t in traffic_cat["answers_selected"]:
+        i += 1
+        for k in t.keys():
+            list_filters_used.append(k)
+    unique_filters = set(list_filters_used)
+    question_text_list = []
+    df_history = pd.DataFrame(columns=["ProductId", "text", "frequency"])
+    total_freq = 0
+    for f in unique_filters:
+        question_text = question_id_to_text(f, question_text_df)
+        if not question_text == 'No text equivalent for question':
+            question_text_list.append(question_text)
+            freq = list_filters_used.count(f)
+            total_freq += freq
+            df_history.loc[len(df_history)] = [f, question_text, freq]
+    df_history["frequency"] = df_history["frequency"] / total_freq
+    return df_history
+
 
 def get_distinct_products(product_set):
     try:
@@ -83,6 +108,16 @@ def get_answers_y(y, product_set):
 
 def get_filters_remaining(dataset):
     return(dataset["PropertyDefinitionId"].drop_duplicates().values)
+
+def get_proba_Q_distribution(question_list, df_history, alpha):
+    Q_proba = np.zeros(len(question_list))
+    for i in range(len(question_list)):
+        q_id = str(int(question_list[i]))
+        Q_proba[i] = 1 / len(question_list)
+        if q_id in df_history["ProductId"].values:
+            Q_proba[i] += alpha * df_history["frequency"].loc[df_history["ProductId"] == q_id].values[0]
+    Q_proba = Q_proba / Q_proba.sum()
+    return Q_proba
     
 
 def get_proba_A_distribution_none(question, products_cat, traffic_processed, alpha=1):
