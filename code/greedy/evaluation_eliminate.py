@@ -55,7 +55,7 @@ parser.add_argument("-pidk", "--pidk",
 parser.add_argument("-p2a", "--p2a",
                     help="proba of user giving 2 answers to a question", type=float)
 parser.add_argument("-p3a", "--p3a",
-                    help="proba of user giving 2 answers to a question", type=float)
+                    help="proba of user giving 3 answers to a question", type=float)
 
 args = parser.parse_args()
 size_test = args.size if args.size else 25    
