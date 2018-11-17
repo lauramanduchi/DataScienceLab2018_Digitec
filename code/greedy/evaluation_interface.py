@@ -46,31 +46,86 @@ except:
     print("Created datasets")
 """
 
-def next():
-    return 1
+class MyApplication:
+    def __init__(self):
+        self.root = Tk()
+        self.root.title("Interface prototype one")
+        self.mainframe = ttk.Frame(self.root)
+        self.mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
+        self.root.columnconfigure(0, weight=2)
+        self.root.rowconfigure(0, weight=1)
 
-root = Tk()
-root.title("Interface prototype one")
+        # Title of the interface
+        self.title = StringVar()
+        self.title.set("This is the interface title")
+        self.titleLabel = ttk.Label(self.mainframe, textvariable=self.title, font=("Helvetica", 18)).grid(column=2, row=1, columnspan=3, rowspan=2, sticky=(W, E))
+    
+        # Title of the question
+        self.question = StringVar()
+        self.question.set("This is the fixed question")
+        self.questionLabel = ttk.Label(self.mainframe, textvariable=self.question).grid(column=2, row=4, columnspan=3, sticky=(W, E))
 
-mainframe = ttk.Frame(root)
-mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
-root.columnconfigure(0, weight=1)
-root.rowconfigure(0, weight=1)
+        # Multiple choice list of answers
+        self.yScroll = Scrollbar(self.mainframe, orient=VERTICAL) #scroll bar
+        self.yScroll.grid(row=6, column=1, sticky=N+S)   
+        self.answers = StringVar()
+        self.answers.set("Ans1 Ans2 Ans3 Ans4 Ans5 Ans6 Ans7 Ans8 Ans9 Ans10 Ans11")
+        self.answerList = Listbox(self.mainframe, listvariable= self.answers, yscrollcommand=self.yScroll.set, selectmode='multiple', height=10)
+        self.answerList.grid(column=2, row=6, columnspan=3, sticky=W)
+    
+        # Labels
+        self.nb_product_left = 7000
+        self.nb_question_asked = 0
+        self.product_left = StringVar()
+        self.product_left.set('Nb product left {}'.format(self.nb_product_left))
+        self.question_asked = StringVar()
+        self.question_asked.set('Nb question asked {}'.format(self.nb_question_asked))       
+        self.productLeftLabel = ttk.Label(self.mainframe, textvariable=self.product_left).grid(column=3, row=16, columnspan=3, sticky=(W, E))
+        self.questionAskedLabel = ttk.Label(self.mainframe, textvariable=self.question_asked).grid(column=3, row=17, columnspan=3, sticky=(W, E))
+        
+        # Main button Next question
+        self.NextButton = ttk.Button(self.mainframe, text="Next", command=self.next).grid(column=6, row=6, sticky=W)
 
 
-title = StringVar()
-title.set("This is the interface title")
-question = StringVar()
-question.set("This is the fixed question")
-nb_product_left = 7000
-nb_question_asked = 0
-product_left_label = StringVar()
-question_asked_label = StringVar()
-ttk.Label(mainframe, textvariable=title).grid(column=3, row=1, columnspan=3, sticky=(W, E))
-ttk.Label(mainframe, textvariable=question).grid(column=2, row=4, columnspan=3, sticky=(W, E))
-ttk.Button(mainframe, text="Next", command=next).grid(column=6, row=6, sticky=W)
-OPTIONS = ["Script 1","Script 2","Script 3","Script 4","Script 5"]
-l = Listbox(mainframe, selectmode='multiple', height=10)
-l.grid(column=2, row=6, columnspan=3, sticky=W)
-l.insert('end', OPTIONS)
-root.mainloop()
+
+    def next(self):
+        """ this is the function called when you press next
+        it should TODO
+        1. modify the text of the question
+        2. modify the list of the answers
+        3. update nb product left
+        4. update nb question asked
+
+        if underthreshold
+        answer list empty (or deleted) 
+        question label is "you have finished everything"
+
+        For now it updates the thing just to show its works.
+        """
+        # prints the index of the selected answers to the console (not the interface)
+        # just to remember how to access it for later function
+        print(self.answerList.curselection())
+        
+        # update number question asked done
+        self.nb_question_asked += 1
+        self.question_asked.set('Nb question asked {}'.format(self.nb_question_asked))
+        
+        # TODO find the next question
+        self.question.set("Display new question")
+        
+        # TODO find the next answer list
+        self.answerList.selection_clear(0, 'end') # clears selected answers
+        self.answers.set("NewAns1 NewAns2 NewAns3 NewAns4 NewAns5 NewAns6 NewAns7 NewAns8 NewAns9 NewAns10 NewAns11")
+        
+        # TODO update number of products left
+        self.nb_product_left -= 1
+        self.product_left.set('Nb product left {}'.format(self.nb_product_left))
+        
+        return 1
+
+    def run(self):
+        self.root.mainloop()
+
+if __name__ == '__main__':
+    app = MyApplication()
+    app.run()
