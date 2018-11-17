@@ -54,8 +54,7 @@ def get_next_question_opt(state, product_set, traffic_set, purchased_set, thresh
     return next_question, done
 
 
-def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text, threshold): 
-    #MEL CHECKED but not run until the end.
+def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text, threshold, size=200): 
     """ Compute the trajectory for all the products following the entropy principle, and divide them in states and actions.
     Args:
         original product catalog, traffic table and purchased articles from the selected category.
@@ -65,7 +64,7 @@ def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, question_tex
     #all_products = products_cat["ProductId"].drop_duplicates().values #MEL: changed drop_duplicates cause several lines per product
     state_list = []
     all_questions_list = []
-    for y in np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = 2):
+    for y in np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = size):
         answers_y = sample_answers(y, products_cat, p_idk=0.1, p_2a = 0.1, p_3a=0.1) 
         question_list, _, _, _, _ = max_info_algorithm(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text,
                             threshold, y,  answers_y)

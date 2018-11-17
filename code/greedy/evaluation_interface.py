@@ -10,6 +10,7 @@ import pandas as pd
 import argparse
 import warnings
 from tkinter import *
+from tkinter import ttk
 import random as rd
 
 
@@ -21,10 +22,10 @@ from greedy.MaxMI_Algo import max_info_algorithm
 from greedy.RandomBaseline import random_baseline
 import dagger.dagger_utils as dagger_utils
 import utils.build_answers_utils as build_answers_utils
-from greedy.evaluation_live import get_next_q_user
+#from greedy.evaluation_live import get_next_q_user
 # To remove future warning from being printed out
 warnings.simplefilter(action='ignore', category=FutureWarning)
-
+"""
 try:
     products_cat = load_obj('../data/products_table')
     traffic_cat = load_obj('../data/traffic_table')
@@ -43,63 +44,33 @@ except:
     save_obj(question_text_df, '../data/question_text_df')
     save_obj(answer_text, '../data/answer_text')
     print("Created datasets")
+"""
+
+def next():
+    return 1
+
+root = Tk()
+root.title("Interface prototype one")
+
+mainframe = ttk.Frame(root)
+mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
+root.columnconfigure(0, weight=1)
+root.rowconfigure(0, weight=1)
 
 
-threshold = 50
-products_set = products_cat.copy()
-state = {} # initial state   
-done=True 
-
-class Application:
-    def __init__(self):
-        # init the main window
-        self.root = Tk()
-        self.root.title("User interface I")
-
-        # init variables
-        self.currentQuestion = StringVar()
-        self.answer = StringVar()
-        self.NumberProductsLeft = IntVar()
-        nb_products = algo_utils.get_distinct_products(products_cat)
-        self.NumberProductsLeft.set(nb_products) # init value
-        
-        # init top level frame
-        self.ftop = Frame(self.root, width = 300, height= 300, bg='pink')
-        self.ftop.pack(fill = BOTH, expand = 1)
-
-        # add score
-        self.f1 = Frame(self.ftop, bg='pink')
-        self.f1.pack(side=TOP)
-        self.f2 = Frame(self.f1, bg='pink')
-        self.f2.pack(side=LEFT)
-        self.score_title = Label(self.f2, text="Nb Product Left", bg='pink', fg="white", font=("Helvetica", 16))
-        self.score_title.grid(row=0, column=1, padx=5)
-        self.score = Label(self.f2, textvariable=self.NumberProductsLeft, bg='pink', fg="white", font=("Helvetica", 16) )
-        self.score.grid(row=1, column=1, padx=5)
-        """
-        # add level
-        self.score_title = Label(self.f2, text="Level", bg='pink', fg="white", font=("Helvetica", 16))
-        self.score_title.grid(row=0,column=2, padx=5)
-        self.level = Label(self.f2, textvariable=self.YourLevel, bg='pink',  fg="white", font=("Helvetica", 16))
-        self.level.grid(row=1, column=2, padx=5)
-        """
-        # add the quit button
-        self.quit = Button(self.f2, text="QUIT", bg='pink', fg= "white", highlightbackground='pink', \
-			padx=3, pady=3, justify='center', bd= 5, command=self.root.destroy, font=("Helvetica", 16))
-        self.quit.grid(row=0, column=5, rowspan=2, padx=(150,10))
-
-        
-        self.select = Button(self.f2, text="Select", bg='pink', fg= "white", highlightbackground='pink', \
-		#	padx=3, pady=3, justify='center', bd= 5, command= #TODO, font=("Helvetica", 16)) #trigger the procedure to get the next thing
-        self.question = Label(self.f2, textvariable=self.currentQuestion, bg='pink', fg="white", font=("Helvetica", 16))
-        self.answer = #TODO things to display list of possible answer
-        #self.can.bind_all('<KeyPress>', self.changeDirection)
-        
-        # create the game canvas 
-        self.can = Canvas(self.ftop, width=300, height= 300)
-        self.can.pack(padx=10, pady=10)
-
-        # init the first interface
-        self.initQuestions() #TODO
-
-        
+title = StringVar()
+title.set("This is the interface title")
+question = StringVar()
+question.set("This is the fixed question")
+nb_product_left = 7000
+nb_question_asked = 0
+product_left_label = StringVar()
+question_asked_label = StringVar()
+ttk.Label(mainframe, textvariable=title).grid(column=3, row=1, columnspan=3, sticky=(W, E))
+ttk.Label(mainframe, textvariable=question).grid(column=2, row=4, columnspan=3, sticky=(W, E))
+ttk.Button(mainframe, text="Next", command=next).grid(column=6, row=6, sticky=W)
+OPTIONS = ["Script 1","Script 2","Script 3","Script 4","Script 5"]
+l = Listbox(mainframe, selectmode='multiple', height=10)
+l.grid(column=2, row=6, columnspan=3, sticky=W)
+l.insert('end', OPTIONS)
+root.mainloop()
