@@ -111,14 +111,15 @@ def init_df():
               SELECT DISTINCT "PropertyDefinition", "PropertyDefinitionId" from product
               WHERE "ProductTypeId"='6'
               ''', c)
-    print('done question_text_df')
+    print('Done question_text_df')
     # ---------- get text of answer ---------- #
     opt_answer_text_df = pd.read_sql_query('''
               SELECT DISTINCT "PropertyDefinitionOption", "PropertyDefinitionOptionId" from product
               WHERE "ProductTypeId"='6'
               ''', c)
     save_obj(opt_answer_text_df, '../data/opt_answer_text_df')
-    print('begin answer_text')
+
+    print('Begin answer_text')
     answer_text = pd.DataFrame()
     answer_text["answer_id"] = products_cat["answer"]
     answer_text["question_id"] = products_cat["PropertyDefinitionId"]
