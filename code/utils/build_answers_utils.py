@@ -261,6 +261,13 @@ def question_id_to_text(question, question_df):
         question_text = 'No text equivalent for question'
     return question_text
 
+def question_text_to_id(question_text, question_df):
+    try:
+        question_text = question_df.loc[question_df["PropertyDefinition"] == str(question_text), "PropertyDefinitionId"].values[0]
+    except IndexError:
+        question_text = 'No id equivalent for question'
+    return question_text
+
 def answer_id_to_text(answer, question, answer_df):
     answer_list = []
     for i in answer:
@@ -277,12 +284,30 @@ def answer_id_to_text(answer, question, answer_df):
                 answer_list.append('Not Found')
     return (answer_list)
 
+def answer_text_to_id(answer_text, question, answer_df):
+    answer_list = []
+    for i in answer_text:
+        print(i)
+        if i == 'idk':
+            answer_list.append('idk')
+        elif i == 'none':
+            answer_list.append('none')
+        else:
+            #print(answer_df.loc[answer_df["answer_text"] == str(i)]["answer_id"].astype(int).values[0]) #for test; remove afterwards
+            try:
+                answer_list.append(answer_df.loc[(answer_df["answer_text"] == str(i)) & (answer_df["question_id"] == int(question)), "answer_id"].astype(float).values[0])
+            except TypeError:
+                answer_list.append(i)
+            except IndexError:
+                answer_list.append('Not Found')
+    return (answer_list)
+
 
 
 # To test some functions
 if __name__=='__main__':
-    from load_utils import load_obj
-    from sampler import sample_answers
+    from utils.load_utils import load_obj
+    from utils.sampler import sample_answers
     try:
         products_cat = load_obj('../data/products_table')
         traffic_cat = load_obj('../data/traffic_table')
