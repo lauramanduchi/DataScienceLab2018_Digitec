@@ -9,6 +9,7 @@ import pandas as pd
 import parmap
 import time
 import warnings
+import multiprocessing
 
 from utils.load_utils import *
 from utils.init_dataframes import init_df
@@ -71,7 +72,8 @@ def opt_step(question_set, product_set, traffic_set, purchased_set, use_history 
                                         traffic_set=traffic_set, \
                                         purchased_set=purchased_set,
                                         pm_pbar=True,
-                                        pm_parallel=True))
+                                        pm_parallel=True,
+                                        pm_processes = multiprocessing.cpu_count()))
     MI_matrix[:,0] = list(question_set)
     
     if use_history:
@@ -110,9 +112,14 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, question_text_df
 
     ##check sometimes
     #next_question = 347
+
+    ## is not a SPEED UP because we calculated the 3 best for each product ...
+    ## if we want to use it we need to put that in evlaution max MI (outside the product loop)
+    ## but it requires quite some modifications from this algorithm ....
+    ## TODO
     first_questions = []
     first_question_set = question_set
-    n_first_q = 3
+    n_first_q = 1 
     print("Optimization: computing first {} questions".format(n_first_q))
     for i in range(n_first_q):
         first_question = opt_step(first_question_set, product_set, traffic_set, purchased_set, use_history, df_history, alpha)
