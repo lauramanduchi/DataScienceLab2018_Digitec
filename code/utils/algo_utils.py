@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import sys
+import os.path
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
 import pandas as pd
 import numpy as np
 from utils.build_answers_utils import question_id_to_text
@@ -90,7 +95,8 @@ def get_proba_Y_distribution(products_cat, purchased_cat, alpha=1):
 def get_questions(product_set):
     return(product_set["PropertyDefinitionId"].drop_duplicates().values)
 
-def get_answers_y(y, product_set):
+def get_answers_y_old(y, product_set):
+    """ can be removed """ 
     questions = get_questions(product_set)
     tmp = product_set.loc[product_set["ProductId"]==y,]
     res = {}
@@ -104,6 +110,26 @@ def get_answers_y(y, product_set):
                 res.update({q: 'idk'})
             else:
                 res.update({q: a[0]})
+    return(res)
+
+def get_answers_y(y, product_set):
+    """ speed up check
+    new took 0.04408001899719238
+    old took 0.11850404739379883
+    gain: time divided by 2.75
+    """
+    questions = product_set["PropertyDefinitionId"].drop_duplicates().values # supposed to be faster
+    tmp = product_set.loc[product_set["ProductId"]==y, ["answer", "PropertyDefinitionId"]]
+    res = {}
+    for q in questions:
+        try:
+            a = tmp.loc[tmp["PropertyDefinitionId"]==int(q),"answer"].values[0] # way faster
+            if np.isnan(a):
+                res.update({q: 'idk'})
+            else:
+                res.update({q: a})
+        except IndexError:
+            res.update({q: 'idk'})
     return(res)
 
 def get_filters_remaining(dataset):
@@ -166,3 +192,51 @@ def get_proba_A_distribution_none(question, products_cat, traffic_processed, alp
     distribution["final_proba"] = distribution["final_proba"]/S
     #print(distribution)
     return(distribution)
+
+
+if __name__ == "__main__":
+    from utils.load_utils import *
+    from utils.init_dataframes import init_df
+    import utils.algo_utils as algo_utils
+    from utils.build_answers_utils import question_id_to_text, answer_id_to_text
+    from utils.sampler import sample_answers
+    import time 
+
+    try:
+        products_cat = load_obj('../data/products_table')
+        traffic_cat = load_obj('../data/traffic_table')
+        purchased_cat = load_obj('../data/purchased_table')
+        question_text_df = load_obj('../data/question_text_df')
+        answer_text_df = load_obj('../data/answer_text')
+        print("Loaded datsets")
+    except:
+        print("Creating datasets...")
+        products_cat, traffic_cat, purchased_cat, filters_def_dict, type_filters, question_text_df, answer_text = init_df()
+        save_obj(products_cat, '../data/products_table')
+        save_obj(traffic_cat, '../data/traffic_table')
+        save_obj(purchased_cat, '../data/purchased_table')
+        save_obj(filters_def_dict, '../data/filters_def_dict')
+        save_obj(type_filters, '../data/type_filters')
+        save_obj(question_text_df, '../data/question_text_df')
+        save_obj(answer_text, '../data/answer_text')
+        print("Created datasets")
+
+    #uploading history from traffic_cat
+    try:
+        df_history = load_obj('../data/df_history')
+    except:
+        df_history = algo_utils.create_history(traffic_cat, question_text_df)
+        save_obj(df_history, '../data/df_history')
+        print("Created history")
+
+
+    y = products_cat["ProductId"][25]
+    answers_y = sample_answers(y, products_cat)
+    threshold = 50
+    start_time = time.time()
+    get_answers_y(y, products_cat)
+    print ('new took {}'.format(time.time()-start_time))
+    start_time = time.time()
+    get_answers_y_old(y, products_cat)
+    print ('old took {}'.format(time.time()-start_time))
+
