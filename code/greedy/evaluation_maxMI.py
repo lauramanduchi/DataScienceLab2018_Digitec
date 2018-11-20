@@ -131,13 +131,13 @@ for y in y_array:
          f.write('{}, {} \n'.format(rdm_quest_text[-1], rdm_quest_text[-1]))
     with open(checkpoint_dir +'/rdm_answer_text.csv', 'a+') as f:
          f.write('{} \n'.format(rdm_answer_text_list[-1]))
-
+    """
     sum_h = 0
     if use_history:
         for q in final_question_list:
-            if str(int(q)) in df_history["ProductId"].values:
+            if str(int(q)) in df_history["questionId"].values:
                 sum_h += 1
-
+    """
 
 with open(checkpoint_dir +'/summary.txt', 'w+') as f:
     f.write('Test set size: {} \n Probability of answering I dont know: {} \n Probability of giving 2 answers: {} Probability of giving 3 answers: {} \n'.format(size_test, p_idk, p_2a, p_3a))
