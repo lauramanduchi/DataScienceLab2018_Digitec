@@ -27,20 +27,20 @@ def random_baseline(product_set, traffic_set, purchased_set, question_text_df, a
     while not (distinct_products < threshold or len(question_set) == 0):   
         next_question = np.random.choice(np.asarray(list(question_set)), size=1)[0]
         next_question = int(next_question)
-        print("Next question is filter : {}".format(next_question))
+        print("RDM: Next question is filter : {}".format(next_question))
         question_text = build_answers_utils.question_id_to_text(next_question, question_text_df)
-        print("Question is: {}".format(question_text))
+        print("RDM: Question is: {}".format(question_text))
         final_question_list.append(int(next_question))
         final_question_text_list.append(question_text)
         answer = quest_answer_y[int(next_question)]
         answer_text = build_answers_utils.answer_id_to_text(answer, next_question, answer_text_df)
-        print("Answer given was: {}".format(answer))
-        print("Answer was: {}".format(answer_text))
+        print("RDM: Answer given was: {}".format(answer))
+        print("RDM: Answer was: {}".format(answer_text))
         product_set, traffic_set, purchased_set = algo_utils.select_subset(question=int(next_question), answer=answer, product_set=product_set,traffic_set =traffic_set, purchased_set = purchased_set)
         question_set_new = set(product_set["PropertyDefinitionId"].values) 
         question_set = question_set_new.difference(final_question_list)
         distinct_products = len(product_set.ProductId.unique()) # faster
-        print('There are still {} products to choose from'.format(distinct_products))
+        print('RDM: There are still {} products to choose from'.format(distinct_products))
     return final_question_list, product_set, y, final_question_text_list, answer_text_list
 
 
