@@ -10,52 +10,24 @@ import numpy as np
 from utils.build_answers_utils import question_id_to_text
 
 
-def create_history_old(traffic_cat, question_text_df):
+def create_history(traffic_cat, question_text_df):
+    """ did not manage to make it faster """
     # Compute the list of all the filters used in history
     list_filters_used = []
-    i = 0
     for t in traffic_cat["answers_selected"]:
-        i += 1
         for k in t.keys():
             list_filters_used.append(k)
     unique_filters = set(list_filters_used)
-    question_text_list = []
-    df_history = pd.DataFrame(columns=["ProductId", "text", "frequency"])
+    df_history = pd.DataFrame(columns=["questionId", "text", "frequency"])
     total_freq = 0
     for f in unique_filters:
         question_text = question_id_to_text(f, question_text_df)
         if not question_text == 'No text equivalent for question':
-            question_text_list.append(question_text)
             freq = list_filters_used.count(f)
             total_freq += freq
             df_history.loc[len(df_history)] = [f, question_text, freq]
     df_history["frequency"] = df_history["frequency"] / total_freq
     return df_history
-
-def create_history(traffic_cat, question_text_df):
-    """old took 0.07480597496032715
-       new took 0.027109861373901367
-       gain: 2.76 speed up"""
-    # Compute the list of all the filters used in history
-    list_filters_used = []
-    for t in traffic_cat["answers_selected"]:
-        list_filters_used += [k for k in t.keys()]
-    unique_filters = set(list_filters_used)
-    question_text_list = []
-    df_history = pd.DataFrame(columns=["ProductId", "text", "frequency"])
-    total_freq = 0
-    for f in unique_filters:
-        question_text = question_id_to_text(f, question_text_df)
-        n=0
-        if not question_text == 'No text equivalent for question':
-            question_text_list.append(question_text)
-            freq = list_filters_used.count(f)
-            total_freq += freq
-            n += 1
-            df_history.loc[n] = [f, question_text, freq]
-    df_history["frequency"] = df_history["frequency"] / total_freq
-    return df_history
-
 
 def get_distinct_products(product_set):
     try:
@@ -64,7 +36,7 @@ def get_distinct_products(product_set):
         print("'ProductId' is not a valid column in Product_set, rename it!")
     return distinct_p
 
-def select_subset(product_set, traffic_set = [], question = None, answer = None, purchased_set = []):
+def select_subset_old(product_set, traffic_set = [], question = None, answer = None, purchased_set = []):
     """
     function assumes you have already build the answer column
     """
@@ -72,7 +44,7 @@ def select_subset(product_set, traffic_set = [], question = None, answer = None,
     if np.array_equal(["idk"], answer): # case i don't know the answer return everything
         return(product_set, traffic_set, [])
     else:
-        q_keep = set(product_set.loc[product_set["PropertyDefinitionId"]==int(question), "ProductId"].drop_duplicates().values) # had to remove this drop_duplicates() because it changed the index !!!!!!!
+        q_keep = set(product_set.loc[product_set["PropertyDefinitionId"]==int(question), "ProductId"].drop_duplicates().values) 
         if np.array_equal(["none"], answer):
             products_to_keep = q_keep
         else:
@@ -90,6 +62,34 @@ def select_subset(product_set, traffic_set = [], question = None, answer = None,
         if len(get_distinct_products(product_set))==0:
             print('problem')
             print(len(q_keep))
+            print(len(all_products))
+        return(product_set, traffic_set, purchased_set)
+
+def select_subset(product_set, traffic_set = [], question = None, answer = None, purchased_set = []):
+    """
+    new took 0.09455990791320801
+    old took 0.510761022567749
+    gain: 5.4 times faster
+
+    function assumes you have already build the answer column
+    """
+    all_products = set(product_set["ProductId"].values)
+    if np.array_equal(["idk"], answer): # case i don't know the answer return everything
+        return(product_set, traffic_set, [])
+    else:
+        product_set = product_set.loc[product_set["PropertyDefinitionId"]==int(question), ]
+        #q_keep = set(product_set.loc[product_set["PropertyDefinitionId"]==int(question), "ProductId"].values) 
+        #a_keep = set()
+        answer = [str(x) for x in answer]
+        product_set  = product_set.loc[product_set["answer"].astype(str).isin(answer), ]
+        products_to_keep = np.unique(product_set["ProductId"])
+        #product_set = product_set.loc[product_set["ProductId"].isin(products_to_keep),]
+        if len(traffic_set) != 0:
+            traffic_set = traffic_set.loc[traffic_set["Items_ProductId"].isin(products_to_keep),]
+        if len(purchased_set) != 0:
+            purchased_set = purchased_set.loc[purchased_set["Items_ProductId"].isin(products_to_keep),]
+        if len(get_distinct_products(product_set))==0:
+            print('problem')
             print(len(all_products))
         return(product_set, traffic_set, purchased_set)
 
@@ -164,8 +164,8 @@ def get_proba_Q_distribution(question_list, df_history, alpha):
     for i in range(len(question_list)):
         q_id = str(int(question_list[i]))
         Q_proba[i] = 1 / len(question_list)
-        if q_id in df_history["ProductId"].values:
-            Q_proba[i] += alpha * df_history["frequency"].loc[df_history["ProductId"] == q_id].values[0]
+        if q_id in df_history["questionId"].values:
+            Q_proba[i] += alpha * df_history["frequency"].loc[df_history["questionId"] == q_id].values[0]
     Q_proba = Q_proba / Q_proba.sum()
     return Q_proba
     
@@ -265,9 +265,14 @@ if __name__ == "__main__":
     print ('old took {}'.format(time.time()-start_time))
     
     start_time = time.time()
-    create_history_old(traffic_cat, question_text_df)
-    print ('old took {}'.format(time.time()-start_time))
-    start_time = time.time()
-    create_history(traffic_cat, question_text_df)
+    #dict = get_answers_y(y, products_cat)
+    new,_,_ = select_subset(products_cat, traffic_cat, 11280, [3600000000.0], purchased_cat)
     print ('new took {}'.format(time.time()-start_time))
+    start_time = time.time()
+    #dict = get_answers_y(y, products_cat)
+    old,_,_ = select_subset_old(products_cat, traffic_cat, 11280, [3600000000.0], purchased_cat)
+    print ('old took {}'.format(time.time()-start_time))
+    print(set(old["ProductId"]) == set(new["ProductId"])) 
+    
+
 
