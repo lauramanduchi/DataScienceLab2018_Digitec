@@ -10,8 +10,8 @@ import numpy as np
 from utils.build_answers_utils import question_id_to_text
 
 
-def create_history(traffic_cat, question_text_df):
-    #Compute the list of all the filters used in history
+def create_history_old(traffic_cat, question_text_df):
+    # Compute the list of all the filters used in history
     list_filters_used = []
     i = 0
     for t in traffic_cat["answers_selected"]:
@@ -29,6 +29,30 @@ def create_history(traffic_cat, question_text_df):
             freq = list_filters_used.count(f)
             total_freq += freq
             df_history.loc[len(df_history)] = [f, question_text, freq]
+    df_history["frequency"] = df_history["frequency"] / total_freq
+    return df_history
+
+def create_history(traffic_cat, question_text_df):
+    """old took 0.07480597496032715
+       new took 0.027109861373901367
+       gain: 2.76 speed up"""
+    # Compute the list of all the filters used in history
+    list_filters_used = []
+    for t in traffic_cat["answers_selected"]:
+        list_filters_used += [k for k in t.keys()]
+    unique_filters = set(list_filters_used)
+    question_text_list = []
+    df_history = pd.DataFrame(columns=["ProductId", "text", "frequency"])
+    total_freq = 0
+    for f in unique_filters:
+        question_text = question_id_to_text(f, question_text_df)
+        n=0
+        if not question_text == 'No text equivalent for question':
+            question_text_list.append(question_text)
+            freq = list_filters_used.count(f)
+            total_freq += freq
+            n += 1
+            df_history.loc[n] = [f, question_text, freq]
     df_history["frequency"] = df_history["frequency"] / total_freq
     return df_history
 
@@ -230,7 +254,7 @@ if __name__ == "__main__":
         print("Created history")
 
 
-    y = products_cat["ProductId"][25]
+    y = products_cat["ProductId"][20]
     answers_y = sample_answers(y, products_cat)
     threshold = 50
     start_time = time.time()
@@ -239,4 +263,11 @@ if __name__ == "__main__":
     start_time = time.time()
     get_answers_y_old(y, products_cat)
     print ('old took {}'.format(time.time()-start_time))
+    
+    start_time = time.time()
+    create_history_old(traffic_cat, question_text_df)
+    print ('old took {}'.format(time.time()-start_time))
+    start_time = time.time()
+    create_history(traffic_cat, question_text_df)
+    print ('new took {}'.format(time.time()-start_time))
 
