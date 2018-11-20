@@ -100,7 +100,10 @@ def get_distinct_products(product_set):
  1) sequence of question to ask
  2) final product list
  3) y chosen as input of algo'''
-def max_info_algorithm(product_set, traffic_set, purchased_set, question_text_df, answer_text_df, threshold, y, answers_y, use_history = False, df_history = 0, alpha = 2):
+def max_info_algorithm(product_set, traffic_set, purchased_set, \
+                       question_text_df, answer_text_df, threshold, \
+                       y, answers_y, use_history = False, df_history = 0, \
+                       alpha = 2, first_questions = None):
     question_set = set(algo_utils.get_questions(product_set))
     final_question_list=[]
     final_question_text_list=[]
@@ -113,19 +116,19 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, question_text_df
     ##check sometimes
     #next_question = 347
 
-    ## is not a SPEED UP because we calculated the 3 best for each product ...
+    ## before was not a SPEED UP because we calculated the 3 best for each product ...
     ## if we want to use it we need to put that in evlaution max MI (outside the product loop)
-    ## but it requires quite some modifications from this algorithm ....
-    ## TODO
-    first_questions = []
-    first_question_set = question_set
-    n_first_q = 1 
-    print("Optimization: computing first {} questions".format(n_first_q))
-    for i in range(n_first_q):
-        first_question = opt_step(first_question_set, product_set, traffic_set, purchased_set, use_history, df_history, alpha)
-        first_questions.append(first_question)
-        first_question_set = first_question_set.difference(set(first_questions))
+    if first_questions is None:
+        first_questions = []
+        first_question_set = question_set
+        n_first_q = 3 
+        print("Optimization: computing first {} questions".format(n_first_q))
+        for i in range(n_first_q):
+            first_question = opt_step(first_question_set, product_set, traffic_set, purchased_set, use_history, df_history, alpha)
+            first_questions.append(first_question)
+            first_question_set = first_question_set.difference(set(first_questions))
 
+    n_first_q = len(first_questions)
     idk = True
     i = 0
     while(idk and i < n_first_q):

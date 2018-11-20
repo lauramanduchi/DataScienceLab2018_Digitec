@@ -14,7 +14,7 @@ from utils.load_utils import *
 from utils.init_dataframes import init_df
 import utils.algo_utils as algo_utils
 from utils.sampler import sample_answers
-from greedy.MaxMI_Algo import max_info_algorithm
+from greedy.MaxMI_Algo import max_info_algorithm, opt_step
 from greedy.RandomBaseline import random_baseline
 
 # To remove future warning from being printed out
@@ -93,15 +93,33 @@ if use_history:
         save_obj(df_history, '../data/df_history')
         print("Created history")
 
-total_sum_h = 0
+
+# compute first_questions outside product loop
+first_questions = []
+first_question_set = set(algo_utils.get_questions(products_cat))
+n_first_q = 3 
+print("Optimization: computing first {} questions without history beforehand".format(n_first_q))
+for i in range(n_first_q):
+    first_question = opt_step(first_question_set, products_cat, traffic_cat, purchased_cat, use_history, df_history, alpha)
+    first_questions.append(first_question)
+    first_question_set = first_question_set.difference(set(first_questions))
+
+
 for y in y_array:
     print(y)
     answers_y = sample_answers(y, products_cat, p_idk = p_idk, p_2a = p_2a, p_3a = p_3a)
-    final_question_list, product_set, y, final_question_text_list, answer_text_list = max_info_algorithm(products_cat, traffic_cat, purchased_cat,
-                                                                                                              question_text_df, answer_text_df,
-                                                                                                              threshold, y, answers_y,
-                                                                                                         use_history = use_history,
-                                                                                                         df_history = df_history, alpha = alpha)
+    final_question_list, product_set, y, final_question_text_list, answer_text_list = max_info_algorithm(products_cat, 
+                                                                                                         traffic_cat, 
+                                                                                                         purchased_cat,
+                                                                                                         question_text_df,
+                                                                                                         answer_text_df,
+                                                                                                         threshold, 
+                                                                                                         y, 
+                                                                                                         answers_y,
+                                                                                                         use_history,
+                                                                                                         df_history,
+                                                                                                         alpha,
+                                                                                                         first_questions)
     print('the length of optimal eliminate filter was {}'.format(len(final_question_list)))
     length_opt.append(len(final_question_list))
     opt_quest.append(final_question_list)
