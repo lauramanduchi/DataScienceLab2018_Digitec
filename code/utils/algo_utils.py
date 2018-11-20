@@ -159,7 +159,7 @@ def get_answers_y(y, product_set):
 def get_filters_remaining(dataset):
     return(dataset["PropertyDefinitionId"].drop_duplicates().values)
 
-def get_proba_Q_distribution(question_list, df_history, alpha):
+def get_proba_Q_distribution_old(question_list, df_history, alpha):
     Q_proba = np.zeros(len(question_list))
     for i in range(len(question_list)):
         q_id = str(int(question_list[i]))
@@ -168,18 +168,32 @@ def get_proba_Q_distribution(question_list, df_history, alpha):
             Q_proba[i] += alpha * df_history["frequency"].loc[df_history["questionId"] == q_id].values[0]
     Q_proba = Q_proba / Q_proba.sum()
     return Q_proba
-    
 
-def get_proba_A_distribution_none(question, products_cat, traffic_processed, alpha=1):
+def get_proba_Q_distribution(question_list, df_history, alpha):
+    """ nearly same speed """
+    n = len(question_list)
+    Q_proba = np.ones(n)/n
+    for i in range(n):
+        q_id = str(int(question_list[i]))
+        try:
+            Q_proba[i] += alpha * df_history["frequency"].loc[df_history["questionId"] == q_id].values[0]
+        except IndexError:
+            pass
+    Q_proba = Q_proba / Q_proba.sum()
+    return Q_proba 
+
+def get_proba_A_distribution_none_old(question, products_cat, traffic_processed, alpha=1):
     """
     assumes answer is already constructed
     """
     distribution = pd.DataFrame()
     number_products_total = len(products_cat['ProductId'].drop_duplicates().values)
+    
     if (number_products_total==0):
         print('Nothing to return there is no product left with this filter')
         return(distribution)
-     # step 1: probas is number of product per answer to the question (no history)
+    
+    # step 1: probas is number of product per answer to the question (no history)
     possible_answers = products_cat.loc[products_cat["PropertyDefinitionId"]==int(question), "answer"] \
                                     .drop_duplicates().values.astype(float)
     nb_prod_per_answer = []
@@ -216,6 +230,56 @@ def get_proba_A_distribution_none(question, products_cat, traffic_processed, alp
     distribution["final_proba"] = distribution["final_proba"]/S
     #print(distribution)
     return(distribution)
+
+
+def get_proba_A_distribution_none(question, products_cat, traffic_processed, alpha=1):
+    """
+    old took 0.9141941070556641
+    new took 0.033429861068725586
+    time divided by 27 !!!!!
+
+    assumes answer is already constructed
+    """
+    distribution = pd.DataFrame()
+    number_products_total = len(products_cat['ProductId'].drop_duplicates().values)
+    
+    if (number_products_total==0):
+        print('Nothing to return there is no product left with this filter')
+        return(distribution)
+    
+    # step 1: probas is number of product per answer to the question (no history)
+    products_cat = products_cat.loc[products_cat["PropertyDefinitionId"]==int(question), ]
+    nb_prod_with_answer = len(np.unique(products_cat["ProductId"])) # new
+    distribution["nb_prod"] = products_cat[['ProductId','answer']].groupby(['answer']).count()["ProductId"]
+    distribution.index = distribution.index.astype(float)
+    nb_prod_without_answer = number_products_total - nb_prod_with_answer
+    distribution["catalog_proba"] = distribution["nb_prod"]/number_products_total
+    
+    #step 2: add the history if available just for KNOWN answers
+    distribution["history_proba"] = 0
+    if (len(traffic_processed)>0):
+        history_answered = []
+        response = traffic_processed["answers_selected"].values
+        for r_dict in response:
+            if str(question) in r_dict:
+                history_answered.extend(r_dict[str(question)])
+        if not history_answered == []: 
+            series = pd.Series(history_answered)
+            add_probas = series.value_counts()
+            s_add = sum(add_probas.values)
+            add_probas = add_probas/s_add
+            index = add_probas.index
+            for i in index:
+                if float(i) in distribution.index:
+                    distribution.loc[float(i), "history_proba"] = add_probas.loc[i]
+    distribution["final_proba"] = distribution["history_proba"].values + alpha*distribution["catalog_proba"].values
+    # add the idk case JUST FROM CATALOG
+    if nb_prod_without_answer!=0:
+        distribution.loc["idk", "final_proba"] = nb_prod_without_answer/float(number_products_total)
+    # renormalize everything
+    distribution["final_proba"] = distribution["final_proba"]/distribution["final_proba"].sum()
+    return(distribution)
+
 
 
 if __name__ == "__main__":
@@ -268,11 +332,34 @@ if __name__ == "__main__":
     #dict = get_answers_y(y, products_cat)
     new,_,_ = select_subset(products_cat, traffic_cat, 11280, [3600000000.0], purchased_cat)
     print ('new took {}'.format(time.time()-start_time))
-    start_time = time.time()
     #dict = get_answers_y(y, products_cat)
+    #print(dict)
+    start_time = time.time()
     old,_,_ = select_subset_old(products_cat, traffic_cat, 11280, [3600000000.0], purchased_cat)
     print ('old took {}'.format(time.time()-start_time))
     print(set(old["ProductId"]) == set(new["ProductId"])) 
+
+    start_time = time.time()
+    #dict = get_answers_y(y, products_cat)
+    new = get_proba_Q_distribution(df_history["questionId"], df_history, alpha=2)
+    print ('new took {}'.format(time.time()-start_time))
+    start_time = time.time()
+    #dict = get_answers_y(y, products_cat)
+    old = get_proba_Q_distribution_old(df_history["questionId"], df_history, alpha=2)
+    print ('old took {}'.format(time.time()-start_time))
+    print(old==new)
+
+    start_time = time.time()
+    #dict = get_answers_y(y, products_cat)
+    new = get_proba_A_distribution_none_old(11280, products_cat, traffic_cat, alpha=1)
+    print ('old took {}'.format(time.time()-start_time))
+    start_time = time.time()
+    #dict = get_answers_y(y, products_cat)
+    old = get_proba_A_distribution_none(11280, products_cat, traffic_cat, alpha=1)
+    print ('new took {}'.format(time.time()-start_time))
+    print(old-new)
+
+    
     
 
 
