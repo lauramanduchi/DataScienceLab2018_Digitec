@@ -123,14 +123,14 @@ for y in y_array:
                                                                                                          alpha,
                                                                                                          first_questions)
     print('the length of optimal eliminate filter was {}'.format(len(final_question_list)))
-    opt_prod_nb.append(len(product_set["ProductId"].drop_duplicates))
+    opt_prod_nb.append(len(np.unique(product_set["ProductId"])))
     length_opt.append(len(final_question_list))
     opt_quest.append(final_question_list)
     opt_quest_text.append(final_question_text_list)
     opt_answer_text_list.append(answer_text_list)
     rb_final_question_list, rb_product_set, rb_y, rb_final_question_text_list, rb_answer_text_list = random_baseline(products_cat, traffic_cat, purchased_cat,
                                                                  question_text_df, answer_text_df, threshold, y, answers_y)
-    rdm_prod_nb.append(len(rb_product_set["ProductId"].drop_duplicates))
+    rdm_prod_nb.append(len(np.unique(rb_product_set["ProductId"])))
     length_rdm.append(len(rb_final_question_list))
     rdm_quest.append(rb_final_question_list)
     rdm_quest_text.append(rb_final_question_text_list)
