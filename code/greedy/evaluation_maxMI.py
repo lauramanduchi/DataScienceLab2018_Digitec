@@ -79,6 +79,8 @@ opt_quest_text = []
 rdm_quest_text = []
 opt_answer_text_list = []
 rdm_answer_text_list = []
+opt_prod_nb = []
+rdm_prod_nb = []
 with open(checkpoint_dir +'/lengths.csv', 'w+') as f:
     f.write("MaxMI, random \n")
 with open(checkpoint_dir +'/quest.csv', 'w+') as f:
@@ -121,13 +123,14 @@ for y in y_array:
                                                                                                          alpha,
                                                                                                          first_questions)
     print('the length of optimal eliminate filter was {}'.format(len(final_question_list)))
+    opt_prod_nb.append(len(product_set["ProductId"].drop_duplicates))
     length_opt.append(len(final_question_list))
     opt_quest.append(final_question_list)
     opt_quest_text.append(final_question_text_list)
     opt_answer_text_list.append(answer_text_list)
-    rb_final_question_list, rb_product_set, rb_y, \
-    rb_final_question_text_list, rb_answer_text_list = random_baseline(products_cat, traffic_cat, purchased_cat,
+    rb_final_question_list, rb_product_set, rb_y, rb_final_question_text_list, rb_answer_text_list = random_baseline(products_cat, traffic_cat, purchased_cat,
                                                                  question_text_df, answer_text_df, threshold, y, answers_y)
+    rdm_prod_nb.append(len(rb_product_set["ProductId"].drop_duplicates))
     length_rdm.append(len(rb_final_question_list))
     rdm_quest.append(rb_final_question_list)
     rdm_quest_text.append(rb_final_question_text_list)
@@ -163,8 +166,14 @@ with open(checkpoint_dir +'/summary.txt', 'w+') as f:
     f.write('Std number of questions for optimal {} \n'.format(np.std(np.asarray(length_opt))))
     f.write('Max number of questions for optimal {} \n'.format(np.max(np.asarray(length_opt))))
     f.write('Min number of questions for optimal {} \n'.format(np.min(np.asarray(length_opt))))
+    f.write('Max nb of products still left for optimal {} \n'.format(np.max(opt_prod_nb)))
+    f.write('Median nb of products still left for optimal {} \n'.format(np.median(opt_prod_nb)))
+    f.write('Min nb of products still left for optimal {} \n'.format(np.min(opt_prod_nb)))
     f.write('\n')
     f.write('Avg number of questions for random {} \n'.format(np.mean(np.asarray(length_rdm))))
     f.write('Std number of questions for random {} \n'.format(np.std(np.asarray(length_rdm))))
     f.write('Max number of questions for random {} \n'.format(np.max(np.asarray(length_rdm))))
     f.write('Min number of questions for random {} \n'.format(np.min(np.asarray(length_rdm))))
+    f.write('Max nb of products still left for random {} \n'.format(np.max(rdm_prod_nb)))
+    f.write('Median nb of products still left for random {} \n'.format(np.median(rdm_prod_nb)))
+    f.write('Min nb of products still left for random {} \n'.format(np.min(rdm_prod_nb)))
