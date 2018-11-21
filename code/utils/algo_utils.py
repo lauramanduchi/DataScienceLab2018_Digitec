@@ -67,9 +67,8 @@ def select_subset_old(product_set, traffic_set = [], question = None, answer = N
 
 def select_subset(product_set, traffic_set = [], question = None, answer = None, purchased_set = []):
     """
-    new took 0.09455990791320801
-    old took 0.510761022567749
-    gain: 5.4 times faster
+    new took 0.4918787479400635
+    old took 0.5476908683776855
 
     function assumes you have already build the answer column
     """
@@ -77,18 +76,15 @@ def select_subset(product_set, traffic_set = [], question = None, answer = None,
     if np.array_equal(["idk"], answer): # case i don't know the answer return everything
         return(product_set, traffic_set, [])
     else:
-        product_set = product_set.loc[product_set["PropertyDefinitionId"]==int(question), ]
-        #q_keep = set(product_set.loc[product_set["PropertyDefinitionId"]==int(question), "ProductId"].values) 
-        #a_keep = set()
         answer = [str(x) for x in answer]
-        product_set  = product_set.loc[product_set["answer"].astype(str).isin(answer), ]
-        products_to_keep = np.unique(product_set["ProductId"])
-        #product_set = product_set.loc[product_set["ProductId"].isin(products_to_keep),]
+        tmp = product_set.loc[(product_set["PropertyDefinitionId"]==int(question)) & (product_set["answer"].astype(str).isin(answer)), ]
+        products_to_keep = np.unique(tmp["ProductId"])
+        product_set = product_set.loc[product_set["ProductId"].isin(products_to_keep),]
         if len(traffic_set) != 0:
             traffic_set = traffic_set.loc[traffic_set["Items_ProductId"].isin(products_to_keep),]
         if len(purchased_set) != 0:
             purchased_set = purchased_set.loc[purchased_set["Items_ProductId"].isin(products_to_keep),]
-        if len(get_distinct_products(product_set))==0:
+        if len(products_to_keep)==0:
             print('problem')
             print(len(all_products))
         return(product_set, traffic_set, purchased_set)
@@ -338,7 +334,8 @@ if __name__ == "__main__":
     old,_,_ = select_subset_old(products_cat, traffic_cat, 11280, [3600000000.0], purchased_cat)
     print ('old took {}'.format(time.time()-start_time))
     print(set(old["ProductId"]) == set(new["ProductId"])) 
-
+    print(len(old)==len(new))
+"""
     start_time = time.time()
     #dict = get_answers_y(y, products_cat)
     new = get_proba_Q_distribution(df_history["questionId"], df_history, alpha=2)
@@ -358,7 +355,7 @@ if __name__ == "__main__":
     old = get_proba_A_distribution_none(11280, products_cat, traffic_cat, alpha=1)
     print ('new took {}'.format(time.time()-start_time))
     print(old-new)
-
+"""
     
     
 
