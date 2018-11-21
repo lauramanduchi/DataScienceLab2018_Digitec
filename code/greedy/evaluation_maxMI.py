@@ -135,8 +135,8 @@ for y in y_array:
     rdm_quest.append(rb_final_question_list)
     rdm_quest_text.append(rb_final_question_text_list)
     rdm_answer_text_list.append(rb_answer_text_list)
-    print('the length of random filter was {}'.format(len(final_question_list)))
-    rdm_quest.append(final_question_list)
+    print('the length of random filter was {}'.format(len(rb_final_question_list)))
+    rdm_quest.append(rb_final_question_list)
     with open(checkpoint_dir +'/lengths.csv', 'a+') as f:
         f.write('{}, {} \n'.format(length_opt[-1], length_rdm[-1]))
     with open(checkpoint_dir +'/opt_quest.csv', 'a+') as f:
