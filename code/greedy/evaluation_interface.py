@@ -282,6 +282,15 @@ if __name__ == '__main__':
         purchased_cat = load_obj('/Users/Nini/DataScienceLab2018_Digitec/data/purchased_table')
         question_text_df = load_obj('/Users/Nini/DataScienceLab2018_Digitec/data/question_text_df')
         answer_text_df = load_obj('/Users/Nini/DataScienceLab2018_Digitec/data/answer_text')
+        filters_def_dict = load_obj('/Users/Nini/DataScienceLab2018_Digitec/data/filters_def_dict')
+        type_filters = load_obj('/Users/Nini/DataScienceLab2018_Digitec/data/type_filters')
+        #products_cat = load_obj('../data/products_table')
+        #traffic_cat = load_obj('../data/traffic_table')
+        #purchased_cat = load_obj('../data/purchased_table')
+        #question_text_df = load_obj('../data/question_text_df')
+        #answer_text_df = load_obj('../data/answer_text')
+        #filters_def_dict = load_obj('../data/filters_def_dict')
+        #type_filters = load_obj('../data/type_filters')
         print("Loaded datasets")
     except:
         print("Creating datasets...")
@@ -294,9 +303,6 @@ if __name__ == '__main__':
         save_obj(question_text_df, '../data/question_text_df')
         save_obj(answer_text, '../data/answer_text')
         print("Created datasets")
-
-    filters_def_dict = load_obj('/Users/Nini/DataScienceLab2018_Digitec/data/filters_def_dict')
-    type_filters = load_obj('/Users/Nini/DataScienceLab2018_Digitec/data/type_filters')
 
 
     threshold = 50
