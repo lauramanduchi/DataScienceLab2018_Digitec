@@ -13,12 +13,30 @@ import utils.algo_utils as algo_utils
 import utils.build_answers_utils as build_answers_utils
 import utils.sampler as sampler
 
-'''Our algorith which returns:
- 1) sequence of question to ask
- 2) final product list
- 3) y chosen as input of algo'''
+
 def random_baseline(product_set, traffic_set, purchased_set, question_text_df, answer_text_df, threshold, y, answers_y):
-    question_set = set(algo_utils.get_questions(product_set))
+    """Random baseline algorithm.
+    Note: 
+        at each timestep sample randomly one question among the remaining questions.
+
+    Args:
+        product_set: the initial set product available (catalog)
+        traffic_set: the initial traffic dataset
+        purchased_set: the initial purchased dataset
+        question_text_df: dataframe containing the correspondance between questionIds and string.
+        answer_text_df: dataframe containing the correspondance between answerIds and string.
+        threshold: stopping criteria of the algorithm
+        y: target product
+        answers_y: sampled answers for target product
+
+    Returns:
+        final_question_list: final list of asked questionsIds
+        product_set: final set of selected products
+        y: target product #TODO check if needed
+        final_question_text_list: final list of asked question (string)
+        answer_text_list: final list of given answers (as string)
+    """
+    question_set = set(product_set["PropertyDefinitionId"].values)
     quest_answer_y = answers_y
     final_question_list=[]
     final_question_text_list=[]
@@ -36,7 +54,11 @@ def random_baseline(product_set, traffic_set, purchased_set, question_text_df, a
         answer_text = build_answers_utils.answer_id_to_text(answer, next_question, answer_text_df)
         print("RDM: Answer given was: {}".format(answer))
         print("RDM: Answer was: {}".format(answer_text))
-        product_set, traffic_set, purchased_set = algo_utils.select_subset(question=int(next_question), answer=answer, product_set=product_set,traffic_set =traffic_set, purchased_set = purchased_set)
+        product_set, traffic_set, purchased_set = algo_utils.select_subset(question=int(next_question), \
+                                                                            answer=answer, \
+                                                                            product_set=product_set, \
+                                                                            traffic_set=traffic_set, \
+                                                                            purchased_set = purchased_set)
         question_set_new = set(product_set["PropertyDefinitionId"].values) 
         question_set = question_set_new.difference(final_question_list)
         distinct_products = len(product_set.ProductId.unique()) # faster
