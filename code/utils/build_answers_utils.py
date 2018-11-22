@@ -281,7 +281,7 @@ def answer_id_to_text(answer, question, answer_df):
             except TypeError:
                 answer_list.append(i)
             except IndexError:
-                answer_list.append('Not Found')
+                answer_list.append('Not Found: ' + str(i))
     return (answer_list)
 
 def answer_text_to_id(answer_text, question, answer_df):
@@ -293,13 +293,14 @@ def answer_text_to_id(answer_text, question, answer_df):
         elif i == 'none':
             answer_list.append('none')
         else:
-            #print(answer_df.loc[answer_df["answer_text"] == str(i)]["answer_id"].astype(int).values[0]) #for test; remove afterwards
             try:
                 answer_list.append(answer_df.loc[(answer_df["answer_text"] == str(i)) & (answer_df["question_id"] == int(question)), "answer_id"].astype(float).values[0])
-            except TypeError:
-                answer_list.append(i)
+            #except TypeError:
+            #    answer_list.append(i)
             except IndexError:
-                answer_list.append('Not Found')
+                print(i)
+                print(str(i.split(": ")[1]))
+                answer_list.append(str(i.split(": ")[1]))
     return (answer_list)
 
 
