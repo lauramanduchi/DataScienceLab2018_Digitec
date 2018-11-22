@@ -123,7 +123,7 @@ class MyApplication(Frame):
 
 
         # Labels
-        self.nb_product_left = len(self.product_set)
+        self.nb_product_left = len(np.unique(self.product_set["ProductId"]))
         self.nb_question_asked = 1
         self.product_left = StringVar()
         self.product_left.set('Nb products left {}'.format(self.nb_product_left))
@@ -276,11 +276,13 @@ if __name__ == '__main__':
 
 # TODO change path nanes (somehow had problems with those so had to modify)
     try:
-        products_cat = load_obj('/Users/Nini/DataScienceLab2018_Digitec/data/products_table')
-        traffic_cat = load_obj('/Users/Nini/DataScienceLab2018_Digitec/data/traffic_table')
-        purchased_cat = load_obj('/Users/Nini/DataScienceLab2018_Digitec/data/purchased_table')
-        question_text_df = load_obj('/Users/Nini/DataScienceLab2018_Digitec/data/question_text_df')
-        answer_text_df = load_obj('/Users/Nini/DataScienceLab2018_Digitec/data/answer_text')
+        products_cat = load_obj('../data/products_table')
+        traffic_cat = load_obj('../data/traffic_table')
+        purchased_cat = load_obj('../data/purchased_table')
+        question_text_df = load_obj('../data/question_text_df')
+        answer_text_df = load_obj('../data/answer_text')
+        filters_def_dict = load_obj('../data/filters_def_dict')
+        type_filters = load_obj('../data/type_filters')
         print("Loaded datasets")
     except:
         print("Creating datasets...")
@@ -294,11 +296,8 @@ if __name__ == '__main__':
         save_obj(answer_text, '../data/answer_text')
         print("Created datasets")
 
-    filters_def_dict = load_obj('/Users/Nini/DataScienceLab2018_Digitec/data/filters_def_dict')
-    type_filters = load_obj('/Users/Nini/DataScienceLab2018_Digitec/data/type_filters')
 
-
-    threshold = 10
+    threshold = 50
 
     print(products_cat["PropertyDefinitionId"].unique())
 
