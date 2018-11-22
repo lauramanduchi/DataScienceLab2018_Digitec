@@ -90,7 +90,7 @@ class MyApplication(Frame):
         # Title of the interface - Questions
         self.title = StringVar()
         self.title.set("Question 1")
-        self.titleLabel = ttk.Label(self.mainframe, textvariable=self.title, font=("Helvetica", 18))
+        self.titleLabel = ttk.Label(self.mainframe, textvariable=self.title, font=("Helvetica", 18)).grid(column=2, row=1, columnspan=3, sticky=(W, E))
 
         # Title of the question
         self.question = IntVar()
@@ -103,8 +103,6 @@ class MyApplication(Frame):
 
         # Multiple choice list of answers
         self.answer_set = self.product_set.loc[self.product_set["PropertyDefinitionId"] == int(self.question.get()), "answer"].drop_duplicates().values
-        #print(self.answer_text_df["answer_id"])
-        #self.answer_set = process_answers_filter(self.question, dict_dict_answers, self.filters_def_dict, self.type_filters) # testing - probably wrong
         print("answer set: {}".format(self.answer_set))
         print("answer set: {}".format(type(self.answer_set)))
         print('int(self.question.get()): {}'.format(int(self.question.get())))
@@ -136,7 +134,7 @@ class MyApplication(Frame):
 
         self.final_products = StringVar()
 
-        
+
         # Main button Next question
         self.NextButton = ttk.Button(self.mainframe, text="Next", command=self.next).grid(column=7, row=6, sticky=W)
 
@@ -162,12 +160,13 @@ class MyApplication(Frame):
         #print(self.answerList.curselection())
 
         # TODO Acccount for different answer types (value, bin, etc...) - check if needed
+        # DONE: idk if next with no selectoin
         # DONE: add a none option (to differentiate none and idk)
-        # TODO Stop simulation when product set is less than threshold
-        # TODO Do not print None option if it leads to empty
-        # TODO Show answer number if no tex available
+        # DONE: Stop simulation when product set is less than threshold
+        # DONE: Do not print None option if it leads to empty
+        # DONE Show answer number if no text available
 
-        # TODO find better way of dealing with no anwwer than try and except
+        # TODO find better way of dealing with no answer than try and except
 
         # Update answer as answer selected. If no answer given, then consider as 'idk'
         text_values = [self.answerList.get(idx) for idx in self.answerList.curselection()]
@@ -207,19 +206,22 @@ class MyApplication(Frame):
         # Updating number of products left
         self.nb_product_left = len(self.product_set)
         self.product_left.set('Nb products left {}'.format(self.nb_product_left))
-        if self.nb_product_left < 1000:
+
+        # Updating question asked and question set
+        self.question.set(next_question)
+        self.question_text.set(next_question_text)
+
+        # If number of products lower than threshold, display final set of products
+        if self.nb_product_left < self.threshold:
             print("Threshold reached")
             win = Toplevel(self.root)
             win.title('Here is what we can offer you!')
             self.title.set("Your final Product Set")
             self.titleLabel = ttk.Label(win, textvariable=self.title, font=("Helvetica", 18))
-            self.final_productsLabel = ttk.Label(win, text=self.product_set['ProductId']).grid(column=2, row=4, columnspan=3, sticky=(W, E))
+            self.final_productsLabel = ttk.Label(win, text=self.product_set['ProductId'].unique()).grid(column=2, row=4, columnspan=3, sticky=(W, E))
+            self.quit()
+            return 1
 
-
-        # Updating question asked and question set
-        #self.question.set("Display new question")
-        self.question.set(next_question)
-        self.question_text.set(next_question_text)
 
         # Getting new answer list
         try:
@@ -230,7 +232,24 @@ class MyApplication(Frame):
 
         self.answer_set = self.product_set.loc[self.product_set["PropertyDefinitionId"] == int(self.question.get()), "answer"].drop_duplicates().values
         self.text_answers = build_answers_utils.answer_id_to_text(self.answer_set, int(self.question.get()), self.answer_text_df)
-        self.text_answers = np.append(self.text_answers, ['None of the above'])
+
+        # Adding 'none' option if some products don't have answer to question
+        print("Null values: {}".format(self.product_set["answer"].isnull().values.any()))
+        if self.product_set["answer"].isnull().values.any():
+            self.text_answers = np.append(self.text_answers, ['None of the above'])
+
+        # If only one answer possible, display final set of products
+        if len(self.text_answers)==1:
+            print("No more decisions to make")
+            win = Toplevel(self.root)
+            win.title('Here is what we can offer you!')
+            self.title.set("Your final Product Set")
+            self.titleLabel = ttk.Label(win, textvariable=self.title, font=("Helvetica", 18))
+            self.final_productsLabel = ttk.Label(win, text=self.product_set['ProductId'].unique()).grid(column=2, row=4,
+                                                                                               columnspan=3,
+                                                                                               sticky=(W, E))
+            self.quit()
+            return 1
 
         listbox = Listbox(self.mainframe, yscrollcommand=self.yScroll.set, selectmode='multiple')
         for var in self.text_answers:
@@ -239,14 +258,15 @@ class MyApplication(Frame):
         self.answerList = listbox
         self.answerList.grid(column=2, row=6, columnspan=5, sticky=W)
 
-
         self.answer_set = products_cat.loc[products_cat["PropertyDefinitionId"] == int(self.question.get()), "answer"].drop_duplicates().values.astype(float)
 
-        
-        return 1
+        #return 1
 
     def run(self):
         self.root.mainloop()
+
+    def quit(self):
+        self.mainframe.destroy()
 
 if __name__ == '__main__':
 
