@@ -299,8 +299,12 @@ def answer_text_to_id(answer_text, question, answer_df):
             #    answer_list.append(i)
             except IndexError:
                 print(i)
-                print(str(i.split(": ")[1]))
-                answer_list.append(str(i.split(": ")[1]))
+                if i.startswith("Not Found"):
+                    print(str(i.split(": ")[1]))
+                    answer_list.append(str(i.split(": ")[1]))
+                else:
+                    answer_list.append(i)
+
     return (answer_list)
 
 
