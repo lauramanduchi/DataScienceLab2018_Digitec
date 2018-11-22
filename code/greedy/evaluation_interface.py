@@ -80,12 +80,6 @@ class MyApplication(Frame):
         self.root.columnconfigure(0, weight=2)
         self.root.rowconfigure(0, weight=1)
 
-        # Setting up pages (to allow for different screens
-        Frame.__init__(self)
-        self.page = 0
-        self.pages = [Page(x) for x in range(2)]  # creates list of 2 pages
-        self.pages[self.page].grid(column=2, row=1, columnspan=3, rowspan=2, sticky=(W, E))
-
 
         # Title of the interface - Questions
         self.title = StringVar()
@@ -123,7 +117,7 @@ class MyApplication(Frame):
 
 
         # Labels
-        self.nb_product_left = len(self.product_set)
+        self.nb_product_left = len(self.product_set["ProductId"].unique())
         self.nb_question_asked = 1
         self.product_left = StringVar()
         self.product_left.set('Nb products left {}'.format(self.nb_product_left))
@@ -167,6 +161,7 @@ class MyApplication(Frame):
         # DONE Show answer number if no text available
 
         # TODO find better way of dealing with no answer than try and except
+        # TODO Remove none
 
         # Update answer as answer selected. If no answer given, then consider as 'idk'
         text_values = [self.answerList.get(idx) for idx in self.answerList.curselection()]
@@ -204,7 +199,7 @@ class MyApplication(Frame):
         self.title.set("Question {}".format(self.nb_question_asked))
 
         # Updating number of products left
-        self.nb_product_left = len(self.product_set)
+        self.nb_product_left = len(self.product_set["ProductId"].unique())
         self.product_left.set('Nb products left {}'.format(self.nb_product_left))
 
         # Updating question asked and question set
@@ -212,13 +207,20 @@ class MyApplication(Frame):
         self.question_text.set(next_question_text)
 
         # If number of products lower than threshold, display final set of products
-        if self.nb_product_left < self.threshold:
+        print("Number products left: {}".format(len(self.product_set["ProductId"].drop_duplicates())))
+        print(self.product_set)
+        if len(self.product_set["ProductId"].unique()) < self.threshold:
             print("Threshold reached")
             win = Toplevel(self.root)
             win.title('Here is what we can offer you!')
-            self.title.set("Your final Product Set")
-            self.titleLabel = ttk.Label(win, textvariable=self.title, font=("Helvetica", 18))
-            self.final_productsLabel = ttk.Label(win, text=self.product_set['ProductId'].unique()).grid(column=2, row=4, columnspan=3, sticky=(W, E))
+            self.title.set("----   Your final Product Set   ----")
+            self.titleLabel = ttk.Label(win, textvariable=self.title, font=("Helvetica", 18)).grid(column=2, row=1, columnspan=10,sticky=(W, E))
+            self.final_productsLabel = ttk.Label(win, text="\n".join(map(str, self.product_set['ProductId'].unique()))).grid(column=2, row=4,
+                                                                                                                             columnspan=10,
+                                                                                                                             sticky=(W, E))
+            #self.final_productsLabel = ttk.Label(win, text=self.product_set['ProductId'].unique()).grid(column=2, row=4,
+            #                                                                                  columnspan=3,
+            #                                                                                   sticky=(W, E))
             self.quit()
             return 1
 
@@ -241,10 +243,9 @@ class MyApplication(Frame):
         # If only one answer possible, display final set of products
         if len(self.text_answers)==1:
             print("No more decisions to make")
-            win = Toplevel(self.root)
-            win.title('Here is what we can offer you!')
+            self.win.title('Here is what we can offer you!')
             self.title.set("Your final Product Set")
-            self.titleLabel = ttk.Label(win, textvariable=self.title, font=("Helvetica", 18))
+            self.titleLabel = ttk.Label(self.win, textvariable=self.title, font=("Helvetica", 18))
             self.final_productsLabel = ttk.Label(win, text=self.product_set['ProductId'].unique()).grid(column=2, row=4,
                                                                                                columnspan=3,
                                                                                                sticky=(W, E))
@@ -298,11 +299,10 @@ if __name__ == '__main__':
     type_filters = load_obj('/Users/Nini/DataScienceLab2018_Digitec/data/type_filters')
 
 
-    threshold = 10
+    threshold = 50
 
     print(products_cat["PropertyDefinitionId"].unique())
 
 
     app = MyApplication(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text_df, threshold, filters_def_dict, type_filters)
     app.run()
-
