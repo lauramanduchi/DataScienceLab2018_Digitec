@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+"""
+This parser was written by Mohammed Ajil of Digitec to 
+helps us to parse the RequestUrl from the traffic data table.
+"""
 
 # PropertyGroup is for example Width, Table Properties or RAM
 # PropertyDefinition is for example Shape, Size or Ram Type
