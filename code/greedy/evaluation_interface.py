@@ -48,7 +48,15 @@ except:
     print("Created datasets")
 """
 
-class MyApplication:
+
+class Page(Frame):
+    def __init__(self, id):
+        Frame.__init__(self)
+        pages = ["Questions",
+                 "Final Product Set"]
+        #Label(self, text=pages[id]).pack(fill=BOTH)
+
+class MyApplication(Frame):
     def __init__(self, product_set, traffic_set, purchased_set, question_text_df, answer_text_df, threshold, filters_def_dict, type_filters):
 
         # Inclusing all necessary data
@@ -72,12 +80,18 @@ class MyApplication:
         self.root.columnconfigure(0, weight=2)
         self.root.rowconfigure(0, weight=1)
 
+        # Setting up pages (to allow for different screens
+        Frame.__init__(self)
+        self.page = 0
+        self.pages = [Page(x) for x in range(2)]  # creates list of 2 pages
+        self.pages[self.page].grid(column=2, row=1, columnspan=3, rowspan=2, sticky=(W, E))
 
-        # Title of the interface
+
+        # Title of the interface - Questions
         self.title = StringVar()
         self.title.set("Question 1")
-        self.titleLabel = ttk.Label(self.mainframe, textvariable=self.title, font=("Helvetica", 18)).grid(column=2, row=1, columnspan=3, rowspan=2, sticky=(W, E))
-    
+        self.titleLabel = ttk.Label(self.mainframe, textvariable=self.title, font=("Helvetica", 18))
+
         # Title of the question
         self.question = IntVar()
         self.question.set(746)
@@ -95,6 +109,8 @@ class MyApplication:
         print("answer set: {}".format(type(self.answer_set)))
         print('int(self.question.get()): {}'.format(int(self.question.get())))
         self.text_answers = build_answers_utils.answer_id_to_text(self.answer_set, int(self.question.get()), self.answer_text_df)
+        self.text_answers = np.append(self.text_answers, ['None of the above'])
+
         print(self.text_answers)
 
         self.yScroll = Scrollbar(self.mainframe, orient=VERTICAL)  # scroll bar
@@ -117,6 +133,9 @@ class MyApplication:
         self.question_asked.set('Nb question asked {}'.format(self.nb_question_asked))       
         self.productLeftLabel = ttk.Label(self.mainframe, textvariable=self.product_left).grid(column=2, row=16, columnspan=3, sticky=(W, E))
         self.questionAskedLabel = ttk.Label(self.mainframe, textvariable=self.question_asked).grid(column=2, row=17, columnspan=3, sticky=(W, E))
+
+        self.final_products = StringVar()
+
         
         # Main button Next question
         self.NextButton = ttk.Button(self.mainframe, text="Next", command=self.next).grid(column=7, row=6, sticky=W)
@@ -131,10 +150,6 @@ class MyApplication:
         3. update nb product left
         4. update nb question asked
 
-        #TODO Acccount for different answer types (value, bin, etc...) - check if needed
-        #  TODO add a none option (to differentiate none and idk)
-        # TODO Stop simulation when product set is less than threshold
-
         if underthreshold
         answer list empty (or deleted) 
         question label is "you have finished everything"
@@ -146,15 +161,24 @@ class MyApplication:
         # just to remember how to access it for later function
         #print(self.answerList.curselection())
 
+        # TODO Acccount for different answer types (value, bin, etc...) - check if needed
+        # DONE: add a none option (to differentiate none and idk)
+        # TODO Stop simulation when product set is less than threshold
+        # TODO Do not print None option if it leads to empty
+        # TODO Show answer number if no tex available
 
         # TODO find better way of dealing with no anwwer than try and except
 
         # Update answer as answer selected. If no answer given, then consider as 'idk'
         text_values = [self.answerList.get(idx) for idx in self.answerList.curselection()]
-        if text_values==[]:
-            text_values = ['idk']
-            print("text_values: {}".format(text_values))
-        values = answer_text_to_id(text_values, int(self.question.get()), self.answer_text_df)
+        if text_values == ['None of the above']:
+            values = ['none']
+            print("values: {}".format(text_values))
+        elif text_values == []:
+            values = ['idk']
+            print("values: {}".format(text_values))
+        else:
+            values = answer_text_to_id(text_values, int(self.question.get()), self.answer_text_df)
         print("values: {}".format(values))
 
         print("self.question.get(): {}".format(self.question.get())) #For debugging
@@ -170,7 +194,7 @@ class MyApplication:
         self.question_set = question_set_new.difference(self.final_question_list)
         print("Question set: {}".format(self.question_set))
 
-        # Getting next question from our algo's opt_step
+        # Getting next question from our algo's opt_step # TODO Modify update step for other algorithm
         next_question = opt_step(self.question_set, self.product_set, self.traffic_set, self.purchased_set, use_history=False, df_history=0, alpha=2)
         print("Next question: {}".format(next_question))
         next_question_text = question_id_to_text(next_question, self.question_text_df)
@@ -183,6 +207,14 @@ class MyApplication:
         # Updating number of products left
         self.nb_product_left = len(self.product_set)
         self.product_left.set('Nb products left {}'.format(self.nb_product_left))
+        if self.nb_product_left < 1000:
+            print("Threshold reached")
+            win = Toplevel(self.root)
+            win.title('Here is what we can offer you!')
+            self.title.set("Your final Product Set")
+            self.titleLabel = ttk.Label(win, textvariable=self.title, font=("Helvetica", 18))
+            self.final_productsLabel = ttk.Label(win, text=self.product_set['ProductId']).grid(column=2, row=4, columnspan=3, sticky=(W, E))
+
 
         # Updating question asked and question set
         #self.question.set("Display new question")
@@ -198,6 +230,7 @@ class MyApplication:
 
         self.answer_set = self.product_set.loc[self.product_set["PropertyDefinitionId"] == int(self.question.get()), "answer"].drop_duplicates().values
         self.text_answers = build_answers_utils.answer_id_to_text(self.answer_set, int(self.question.get()), self.answer_text_df)
+        self.text_answers = np.append(self.text_answers, ['None of the above'])
 
         listbox = Listbox(self.mainframe, yscrollcommand=self.yScroll.set, selectmode='multiple')
         for var in self.text_answers:
