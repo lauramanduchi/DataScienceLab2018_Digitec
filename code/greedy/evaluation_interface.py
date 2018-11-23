@@ -20,7 +20,7 @@ from utils.init_dataframes import init_df
 import utils.algo_utils as algo_utils
 from utils.sampler import sample_answers
 from greedy.MaxMI_Algo import max_info_algorithm, opt_step
-from utils.build_answers_utils import question_id_to_text, answer_id_to_text, process_answers_filter, answer_text_to_id
+from utils.build_answers_utils import question_id_to_text, answer_id_to_text, process_answers_filter
 from greedy.RandomBaseline import random_baseline
 import dagger.dagger_utils as dagger_utils
 import utils.build_answers_utils as build_answers_utils
@@ -164,15 +164,18 @@ class MyApplication(Frame):
         # TODO Remove none
 
         # Update answer as answer selected. If no answer given, then consider as 'idk'
-        text_values = [self.answerList.get(idx) for idx in self.answerList.curselection()]
+        # text_values = [self.answerList.get(idx) for idx in self.answerList.curselection()]
+        id_values = [self.answer_set[idx] for idx in self.answerList.curselection()]
+        """
         if text_values == ['None of the above']:
             values = ['none']
             print("values: {}".format(text_values))
-        elif text_values == []:
+        """
+        if id_values == []:
             values = ['idk']
-            print("values: {}".format(text_values))
+            print("values: {}".format(id_values))
         else:
-            values = answer_text_to_id(text_values, int(self.question.get()), self.answer_text_df)
+            values = id_values
         print("values: {}".format(values))
 
         print("self.question.get(): {}".format(self.question.get())) #For debugging
@@ -234,12 +237,12 @@ class MyApplication(Frame):
 
         self.answer_set = self.product_set.loc[self.product_set["PropertyDefinitionId"] == int(self.question.get()), "answer"].drop_duplicates().values
         self.text_answers = build_answers_utils.answer_id_to_text(self.answer_set, int(self.question.get()), self.answer_text_df)
-
+        """
         # Adding 'none' option if some products don't have answer to question
         print("Null values: {}".format(self.product_set["answer"].isnull().values.any()))
         if self.product_set["answer"].isnull().values.any():
             self.text_answers = np.append(self.text_answers, ['None of the above'])
-
+        """
         # If only one answer possible, display final set of products
         if len(self.text_answers)==1:
             print("No more decisions to make")
