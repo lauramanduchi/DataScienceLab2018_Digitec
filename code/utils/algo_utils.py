@@ -159,7 +159,7 @@ def get_proba_A_distribution_none(question, products_cat, traffic_processed, alp
         Args:
             question: selected question, the algorithm computes the probabilities of its possible answers
             product_set: product table [ProductId	BrandId	ProductTypeId	PropertyValue	PropertyDefinitionId	PropertyDefinitionOptionId	answer]
-            traffic_set: traffic table [SessionId	answers_selected	Items_ProductId]
+            traffic_processed: traffic table [SessionId	answers_selected	Items_ProductId]
             alpha: alpha = 0 means fraction of products per answer without the history data, otherwise the bigger it is the more history is taken into account
         Returns:
             distribution: probability distribution of answers given a question
@@ -199,10 +199,12 @@ def get_proba_A_distribution_none(question, products_cat, traffic_processed, alp
 
     #step 3: combine the two probabilities as: p1 + alpha * p2
     distribution["final_proba"] = distribution["catalog_proba"].values + alpha*distribution["history_proba"].values
-    # add the idk case JUST FROM CATALOG
+
+    #step 4: add the idk answer and relative probability JUST FROM CATALOG
     if nb_prod_without_answer!=0:
         distribution.loc["idk", "final_proba"] = nb_prod_without_answer/float(number_products_total)
-    # renormalize everything
+
+    #step 5: renormalize everything
     distribution["final_proba"] = distribution["final_proba"]/distribution["final_proba"].sum()
     return(distribution)
 
@@ -216,6 +218,7 @@ if __name__ == "__main__":
     from utils.sampler import sample_answers
     import time 
 
+    #uploading tables
     try:
         products_cat = load_obj('../data/products_table')
         traffic_cat = load_obj('../data/traffic_table')
@@ -243,7 +246,7 @@ if __name__ == "__main__":
         save_obj(df_history, '../data/df_history')
         print("Created history")
 
-
+    #sample a product
     y = products_cat["ProductId"][20]
     answers_y = sample_answers(y, products_cat)
     threshold = 50
@@ -253,7 +256,6 @@ if __name__ == "__main__":
     start_time = time.time()
     get_answers_y_old(y, products_cat)
     print ('old took {}'.format(time.time()-start_time))
-    
     start_time = time.time()
     #dict = get_answers_y(y, products_cat)
     new,_,_ = select_subset(products_cat, traffic_cat, 11280, [3600000000.0], purchased_cat)

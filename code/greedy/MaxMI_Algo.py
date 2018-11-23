@@ -176,7 +176,6 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, \
         print("Answer was: {}".format(answer_text))
         answer_text_list.append(answer_text)
         product_set, traffic_set, purchased_set = algo_utils.select_subset(question=next_question, answer=answer, product_set=product_set, traffic_set =traffic_set, purchased_set = purchased_set)
-        #question_set_new = set(algo_utils.get_filters_remaining(product_set)) # overhead for function call tO REMOVE
         question_set_new = set(product_set["PropertyDefinitionId"].values)
         question_set = question_set_new.difference(final_question_list)
         distinct_products = len(product_set.ProductId.unique()) # faster
