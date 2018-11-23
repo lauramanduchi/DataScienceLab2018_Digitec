@@ -97,6 +97,11 @@ def eliminate_filters_no_answers(df, type_filters):
     
     Returns:
         new: new dataframe with the 'no_answer' filters.
+    
+    Example:
+        >>> df = load_obj(products_cat, '../data/products_table')
+        >>> filters_def_dict, type_filters = create_categories(df)
+        >>> df = eliminate_filters_no_answers(df, type_filters)
     """
     new = df.copy()
     for f in type_filters:
@@ -108,20 +113,20 @@ def eliminate_filters_no_answers(df, type_filters):
 def map_origAnswer_newAnswer(df, filters_def_dict, type_filters):
     """ Function to construct the final 'answer' column.
     Note:
-        First run create_cateogry to get filters_def_dcit and 
+        First run create_category to get filters_def_dcit and 
         type_filters
     
     Args:
         df: input product_catalog with the row answers
-        filters_def_dict: as described in create_cateogry
-        type_filters: as described in create_cateogry
+        filters_def_dict: as described in create_category
+        type_filters: as described in create_category
     
     Returns:
         answers: array of values to be used as the new 'answer' column. 
                 Ordered in the same order as the original df index.
 
     Example: 
-        >>> df = product_cat
+        >>> df = load_obj(products_cat, '../data/products_table')
         >>> filters_def_dict, type_filters = create_categories(df)
         >>> df['answer'] = map_origAnswer_newAnswer(df, filters_def_dict, type_filters)
     """
@@ -151,6 +156,25 @@ def map_origAnswer_newAnswer(df, filters_def_dict, type_filters):
     return(answers)
 
 def map_text_new_answer(df, answer_text_df, type_filters, filters_def_dict):
+    """ Finds the string corresponding to the new answer.
+    Note:
+        First construct the new 'answer' column and add it to df.
+    
+    Args:
+        df: input product catalog
+        answer_text_df: dataframe with columns question_id, answer_id and answer_text.
+        type_filters: as described in create_category
+        filters_def_dict: as described in create_category
+    
+    Returns:
+        text_answers: list of text equivalent to each answer ordered as the df dataframe index.
+    
+    Example:
+        >>> df = load_obj(products_cat, '../data/products_table')
+        >>> filters_def_dict, type_filters = create_categories(df)
+        >>> df['answer'] = map_origAnswer_newAnswer(df, filters_def_dict, type_filters)
+        >>> text_answer = map_text_new_answer(df, answer_text_df, type_filters, filters_def_dict)
+    """
     text_answers = []
     for i in df.index.values:
         filter = df.loc[i, "PropertyDefinitionId"] 
