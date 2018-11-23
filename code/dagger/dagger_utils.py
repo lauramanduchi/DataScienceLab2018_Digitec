@@ -10,13 +10,8 @@ import matplotlib.pyplot as plt
 import warnings
 
 import utils.algo_utils as algo_utils
-from utils.init_dataframes import init_df
-from greedy.eliminate import max_eliminate_algorithm
 from greedy.MaxMI_Algo import max_info_algorithm
-from greedy.RandomBaseline import random_baseline
-import greedy.RandomBaseline as RandomBaseline
 import greedy.MaxMI_Algo as MaxMI
-import greedy.eliminate as eliminate
 from utils.sampler import sample_answers
 
 
@@ -45,11 +40,7 @@ def get_next_question_opt(state, product_set, traffic_set, purchased_set, thresh
         next_question = 0
     else:
         done = False
-        #next_question = eliminate.opt_step(question_set, product_set, traffic_set, purchased_set)
         next_question = MaxMI.opt_step(question_set, product_set, traffic_set, purchased_set)
-        #for fast debug use randombaseline
-        #question_set = set(algo_utils.get_questions(product_set))
-        #next_question = int(np.random.choice(np.asarray(list(question_set)), size=1)[0])
     return next_question, done
 
 
