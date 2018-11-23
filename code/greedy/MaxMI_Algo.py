@@ -46,19 +46,9 @@ def conditional_entropy(answer, question, product_set, traffic_set, purchased_se
         print('pbm only {} product left'.format(product_ids))
         print(answer)
         print(question)
-    #t = time.time()
     prob_y_given_a = [p_product_given_a.loc[product] for product in product_ids]
     cond_entropy_y = np.sum(prob_y_given_a*np.log(prob_y_given_a))
-    """ CHECKED new version is little faster (not much though)
-    print('new {}'.format(time.time()-t))
-    t = time.time()
-    cond_entropy_y = 0
-    for product in product_ids:
-        prob_y_given_a = p_product_given_a.loc[product]
-        cond_entropy_y += prob_y_given_a * np.log(prob_y_given_a)
-    print(time.time()-t)
-    print(cond_entropy_y)
-    """
+
     return cond_entropy_y
 
 
@@ -82,7 +72,6 @@ def mutual_inf(question, product_set, traffic_set, purchased_set):
     return (short_mutual_info)
 
 
-# Return question which maximizes MI
 def opt_step(question_set, product_set, traffic_set, purchased_set, use_history = False, df_history = 0, alpha = 2):
     """Maximal mutual information greedy step to select the best questions to ask given the history:
     Args:
@@ -107,7 +96,8 @@ def opt_step(question_set, product_set, traffic_set, purchased_set, use_history 
                                         pm_parallel=True,
                                         pm_processes = multiprocessing.cpu_count()))
     MI_matrix[:,0] = list(question_set)
-    
+
+    #Prior on filters already been used by users (more user-friendly)
     if use_history:
         Q_distr = algo_utils.get_proba_Q_distribution(list(question_set), df_history, alpha)
         MI_matrix[:, 1] = np.multiply(mutual_array, Q_distr)
@@ -155,8 +145,7 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, \
     print("There are {} possible products to choose from".format(len(distinct_products)))
     iter = 1
 
-    ## before was not a SPEED UP because we calculated the 3 best for each product ...
-    ## if we want to use it we need to put that in evlaution max MI (outside the product loop)
+    #Compute the first 3 optimized questions for IDK answers (speed-up)
     if first_questions is None:
         first_questions = []
         first_question_set = question_set
@@ -167,6 +156,7 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, \
             first_questions.append(first_question)
             first_question_set = first_question_set.difference(set(first_questions))
 
+    #Given we have the first 3 best questions for IDK answer we can use them until we receive a different answer
     n_first_q = len(first_questions)
     idk = True
     i = 0
@@ -194,6 +184,7 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, \
         print("There are {} possible products to choose from".format(distinct_products))
         iter+=1
 
+    #Perform greedy step until the subset of products is smaller than a certain threshold
     while not (distinct_products < threshold or len(question_set) == 0):
         next_question = opt_step(question_set, product_set, traffic_set, purchased_set, use_history, df_history, alpha)
         print("Next question is filter : {}".format(next_question))
