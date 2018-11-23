@@ -118,14 +118,30 @@ def init_df():
           .format(no_sessionId_purchased, cat, no_sessionId_found))
     print('In total there were {} matching rows in the traffic dataset'.format(no_matching_rows))
     traffic_cat = keep_only_useful_URLs(traffic_cat)
-    
+
 
     # ================= DATA PREPROCESSING =============== #
+
+    # Adding Brands (in a separate column) as filter in products_cat
+    print("Adding brands as property in dataframe...")
+    brandId = 99999
+    for p in products_cat["ProductId"].drop_duplicates():
+        brand = products_cat.loc[products_cat['ProductId'] == p]["BrandId"].drop_duplicates()
+        brand = brand.values[0]
+        producttype_id = products_cat.loc[products_cat['ProductId'] == p]["ProductTypeId"].drop_duplicates().values[0]
+        newrow = pd.Series([p, brand, producttypeid, brandId, brand],
+                           index=["ProductId", "BrandId", "ProductTypeId", "PropertyDefinitionId",
+                                  "PropertyDefinitionOptionId"],
+                           name=str(int(i + len(products_cat) + 1)))
+        products_cat = products_cat.append(newrow)
+    print("Added brands as property")
+
+
     # New answer definition
     filters_def_dict, type_filters  = create_categories(products_cat)
     products_cat = eliminate_filters_no_answers(products_cat, type_filters)
     products_cat["answer"] = map_origAnswer_newAnswer(products_cat, filters_def_dict, type_filters)
-    
+
     # Map traffic data to new answers
     traffic_cat = process_all_traffic_answers(traffic_cat, purchased_cat, filters_def_dict, type_filters)
 
@@ -136,18 +152,32 @@ def init_df():
               ''', c)
     print('Done question-to-text dataframe')
 
+    # Adding brand to question_text
+    newrow_question_text = pd.Series([str("Brand"), brandId],
+                                     index=["PropertyDefinition", "PropertyDefinitionId"],
+                                     name=str(len(question_text_df)))
+    question_text_df = question_text_df.append(newrow_question_text)
+
     # Get original text of answers
     opt_answer_text_df = pd.read_sql_query('''
               SELECT DISTINCT "PropertyDefinitionOption", "PropertyDefinitionOptionId" from product
               WHERE "ProductTypeId"='6'
               ''', c)
+
     # Process the original to new answers if necessary
     print('Begin answer-to-text dataframe')
     answer_text = pd.DataFrame()
     answer_text["answer_id"] = products_cat["answer"]
     answer_text["question_id"] = products_cat["PropertyDefinitionId"]
     answer_text["answer_text"] = map_text_new_answer(products_cat, opt_answer_text_df, type_filters, filters_def_dict)
+
+    # Adding brands to answer_text
+    brand_text_df = pd.read_csv("../data/brands.csv")
+    brand_text_df['question_id'] = brandId
+    brand_text_df.columns = ["answer_id", "answer_text", "question_id"]  # Renaming columns (so same as answer_text)
+    answer_text = answer_text.append(brand_text_df)  # Appending brands dataframe to answer_text
     answer_text.drop_duplicates(inplace=True)
+
     return products_cat, traffic_cat, purchased_cat, filters_def_dict, type_filters, question_text_df, answer_text
 
 if __name__=="__main__":
