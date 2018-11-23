@@ -197,40 +197,54 @@ def map_text_new_answer(df, answer_text_df, type_filters, filters_def_dict):
     return(text_answers)
 
 def filters_answers_per_requestURL(RequestUrl):
-    """
-    Returns for given RequestUr:
-    filters: [filters]
-    dict_dict_answers: array of dict of raw answers, {filters_id: [{dict_answers}]}
-    propgroup_list: list of filter group (maybe not needed) [property group] 
+    """ Gets the filters and corresponding answers used in one RequestUrl
+    Note:
+        Uses the parser given by Digitec.
+    Args:
+        RequestURL: substring of URL as in RequestUrl column of traffic table
+    Returns:
+        filters: array of question id
+        dict_dict_answers: array of dict of raw answers, {filters_id: [{dict_answers}]}.
+                            ex: {'7302': [{'PropertyDefinitionOptionIds': ['5767']}]}
     """
     result = parse_query_string(RequestUrl) 
-    propgroup_list = [] # optional
     filters = []
     dict_dict_answers = {}
-    if not bool(result): # case it is not parsable
-        return(propgroup_list, filters, dict_dict_answers)
+    # case it is not parsable
+    if not bool(result): 
+        return(filters, dict_dict_answers)
     try:
         d = result["PropertyGroup"]
     except:
-        # print('no PropertyGroup')
-        return(propgroup_list, filters, dict_dict_answers)
-    for propgroup, group_dict in d.items():
-        propgroup_list.append(propgroup)
+        # case property group not found
+        return(filters, dict_dict_answers)
+    for _, group_dict in d.items():
         propdef_dict = group_dict['PropertyDefinition']
         for propdef, optProp in propdef_dict.items():
             filters.append(propdef) # PropertyDefinitionId
             temp = []
             temp.append(optProp)
             dict_dict_answers.update({propdef: temp})
-    return(propgroup_list, filters, dict_dict_answers) 
+    return(filters, dict_dict_answers) 
 
-def categorize(filtername, filters_def_dict, type_filters, min_value, max_value=None):
-    """
-    finds the right bins or value i.e. map historic user input to 
-    our categorized answers
-    if min>max or biggest possible returns []
-    if max<smallest possible []
-    TEST OK
+def hist_to_new(filtername, filters_def_dict, type_filters, min_value=None, max_value=None):
+    """ Finds the right bin or value from one historic answer i.e. map historic user input to 
+    our new answer category. Also handles the case where the filter used on the website was of type
+    min / max. Helper function for process_answers_filter.
+    
+    Note:
+        If min>max or biggest possible returns []
+        If max<smallest possible []
+
+    Args:
+        filtername: questionId
+        filters_def_dict: as described in create_category
+        type_filters: as described in create_category
+        min_value: min value selected in case of min/max selection
+        max_value: max value selected in case of min/max selection
+
+    Returns:
+        the new answer
     """
     filtername = str(filtername)
     try:
@@ -267,10 +281,29 @@ def categorize(filtername, filters_def_dict, type_filters, min_value, max_value=
 
 
 def process_answers_filter(filtername, total_answer_dict, filters_def_dict, type_filters):
-    """
-    Transforms the answers dict to a array of answers from the new answer column. To map
-    to our new system of asnswer.
-    Min - Max - Value - OptionsIds is tested.
+    """ Transforms the answers dict (extracted from original traffic data by the 
+    filters_answers_per_requestURL function) to one array of new answers 
+    (as defined in create_category function) for one filter.
+   
+    Args:
+       filtername: questionId
+       total_answer_dict: one dict returned by filters_answers_per_requestURL
+                         in {'PropertyDefinitionOptionIds': ['5767']}
+       filters_def_dict: as described in create_category
+       type_filters: as described in create_category
+
+    Returns:
+        answers: array of new answers
+    
+    Example:
+        >>> RequestUrl = /de/s1/producttype/notebook-6?opt=f168334|v68-1:0.39624|v68-1:0.3556|v68-1:0.35306|v1649-11297:128000000000|v1649-11297:180000000000&bra=5&pdo=13-7302:5767&tagIds=614
+        >>> filters, dict_dict_answers = filters_answers_per_requestURL(RequestUrl)
+        >>> print(filters)
+            ['7302']
+        >>> print(dict_dict_answers)
+            {'7302': [{'PropertyDefinitionOptionIds': ['5767']}]}
+        >>> process_answers_filter(7302, {'PropertyDefinitionOptionIds': ['5767']}, filters_def_dict, type_filters)
+            ['5767']
     """
     answers = []
     answer_dict = total_answer_dict[str(filtername)]
@@ -285,18 +318,32 @@ def process_answers_filter(filtername, total_answer_dict, filters_def_dict, type
                     to_categorize = True
                 if answerType == 'Min':
                     min_value = value
+                    to_categorize = True
             if to_categorize:
-                answers.extend(categorize(filtername, filters_def_dict, type_filters, min_value, max_value))
+                answers.extend(hist_to_new(filtername, filters_def_dict, type_filters, min_value, max_value))
         else:
-            # case where we have directly the answer
-            # no PropertyDefinitionsOptionsIDs but PropertyValue I guess
-            answers.extend(categorize(filtername, filters_def_dict, type_filters, answers_item))
-    # check that only one of both categroy is possible
+            # case where we have to map old answer to new answer.
+            # also handling the min/max selection
+            answers.extend(hist_to_new(filtername, filters_def_dict, type_filters, answers_item))
     return(list(set(answers)))
 
 def process_all_traffic_answers(traffic_df, purchased_cat, filters_def_dict, type_filters):
-    """
-    wrapper function to process all answers from the dataset.
+    """ Wrapper function to process all answers from the dataset. And performs inner join with purchased_cat
+    to have the item_bought_id in the traffic dataset. 
+
+    Note:
+        Uses process_answers_filter to map to new answers
+        Assuming you have eliminated all invalid urls from extracted traffic data 
+        with keep_only_useful_URLs
+    
+    Args:
+       traffic_df: traffic table as extracted in init_dataframe()
+       purchased_cat: table of purchased articles as extracted in init_dataframe()
+       filters_def_dict: as described in create_category
+       type_filters: as described in create_category
+    
+    Returns:
+        res: processed traffic data with colums "SessionId", "answers_selected", "Items_ProductId"
     """
     # assuming you have eliminated all invalid urls
     idx = traffic_df.index.values
@@ -304,7 +351,7 @@ def process_all_traffic_answers(traffic_df, purchased_cat, filters_def_dict, typ
     for i, url in zip(idx, urlsList):
         ans_d = {}
         try:
-            propgroup_list, filters, dict_dict_answers = filters_answers_per_requestURL(url)
+            filters, dict_dict_answers = filters_answers_per_requestURL(url)
             for f in filters: 
                 tmp_new_ans = process_answers_filter(f, dict_dict_answers, filters_def_dict, type_filters)
                 ans_d.update({f: tmp_new_ans})
@@ -313,7 +360,6 @@ def process_all_traffic_answers(traffic_df, purchased_cat, filters_def_dict, typ
             else:
                 traffic_df.loc[i, "answer"] = [dict()]
         except TypeError:
-            # print('error in filters_answers_per_requestURL')
             traffic_df.loc[i, "answer"] =  [dict()]
     session_array = traffic_df["SessionId"].drop_duplicates().values
     res = pd.DataFrame()
