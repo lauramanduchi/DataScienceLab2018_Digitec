@@ -91,7 +91,6 @@ def init_df():
     print('Found {} sold items. And {} unique product id'.format(len(purchased_cat), len(purchased_cat["ProductId"])))
 
     # Extract of relevant traffic data (batch if necessary)
-    traffic_cat = pd.DataFrame()
     no_sessionId_found = 0
     no_matching_rows = 0
     SessionIds = purchased_cat["SessionId"].drop_duplicates().values.astype(int)
@@ -129,7 +128,7 @@ def init_df():
         brand = products_cat.loc[products_cat['ProductId'] == p]["BrandId"].drop_duplicates()
         brand = brand.values[0]
         producttype_id = products_cat.loc[products_cat['ProductId'] == p]["ProductTypeId"].drop_duplicates().values[0]
-        newrow = pd.Series([p, brand, producttypeid, brandId, brand],
+        newrow = pd.Series([p, brand, producttype_id, brandId, brand],
                            index=["ProductId", "BrandId", "ProductTypeId", "PropertyDefinitionId",
                                   "PropertyDefinitionOptionId"],
                            name=str(int(i + len(products_cat) + 1)))
