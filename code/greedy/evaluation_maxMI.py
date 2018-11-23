@@ -96,7 +96,7 @@ if use_history:
 # ============= INIT VARIABLES ========== #
 with open(checkpoint_dir +'/parameters.txt', 'w+') as f:
     f.write('Test set size: {} \n Probability of answering I dont know: {} \n Probability of giving 2 answers: {} Probability of giving 3 answers: {} \n'.format(size_test, p_idk, p_2a, p_3a))
-    f.write('History: {} \nAlpha parameter: {}').format(use_history, alpha)
+    f.write('History: {} \nAlpha parameter: {}'.format(use_history, alpha))
 
 y_array = np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = size_test)
 threshold = 50
@@ -178,7 +178,7 @@ for y in y_array:
 # Save the summary statistics of the run in summary.txt
 with open(checkpoint_dir +'/summary.txt', 'w+') as f:
     f.write('Test set size: {} \n Probability of answering I dont know: {} \n Probability of giving 2 answers: {} Probability of giving 3 answers: {} \n'.format(size_test, p_idk, p_2a, p_3a))
-    f.write('History: {} \nAlpha parameter: {}').format(use_history, alpha)
+    f.write('History: {} \nAlpha parameter: {}'.format(use_history, alpha))
     f.write('Avg number of questions for optimal {} \n'.format(np.mean(np.asarray(length_opt))))
     f.write('Median number of questions for optimal {} \n'.format(np.median(np.asarray(length_opt))))
     f.write('Std number of questions for optimal {} \n'.format(np.std(np.asarray(length_opt))))

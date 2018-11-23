@@ -10,18 +10,12 @@ import matplotlib.pyplot as plt
 import warnings
 
 import utils.algo_utils as algo_utils
-from utils.init_dataframes import init_df
-from utils.load_utils import load_obj, save_obj
-from greedy.eliminate import max_eliminate_algorithm
 from greedy.MaxMI_Algo import max_info_algorithm
-from greedy.RandomBaseline import random_baseline
-import greedy.RandomBaseline as RandomBaseline
 import greedy.MaxMI_Algo as MaxMI
-import greedy.eliminate as eliminate
 from utils.sampler import sample_answers
 
 
-def get_products(state, product_set, traffic_set=[], purchased_set=[]): #MEL: DONE
+def get_products(state, product_set, traffic_set=[], purchased_set=[]):
     """ from the state dict get the remaining products """
     result_df = product_set.copy()
     for q, a in state.items():
@@ -46,11 +40,7 @@ def get_next_question_opt(state, product_set, traffic_set, purchased_set, thresh
         next_question = 0
     else:
         done = False
-        #next_question = eliminate.opt_step(question_set, product_set, traffic_set, purchased_set)
         next_question = MaxMI.opt_step(question_set, product_set, traffic_set, purchased_set)
-        #for fast debug use randombaseline
-        #question_set = set(algo_utils.get_questions(product_set))
-        #next_question = int(np.random.choice(np.asarray(list(question_set)), size=1)[0])
     return next_question, done
 
 
@@ -61,17 +51,12 @@ def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, question_tex
     Returns:
         state_list (questions, answers made) and question_list (actions)
     """
-    #all_products = products_cat["ProductId"].drop_duplicates().values #MEL: changed drop_duplicates cause several lines per product
     state_list = []
     all_questions_list = []
     for y in np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = size):
         answers_y = sample_answers(y, products_cat, p_idk=0.1, p_2a = 0.1, p_3a=0.1) 
         question_list, _, _, _, _ = max_info_algorithm(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text,
                             threshold, y,  answers_y)
-        
-        #question_list, _, _, _, _ = max_eliminate_algorithm(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text,
-        #                   threshold, y,  answers_y) # question list is the full trajectory of chosen action until end of game
-       
         # first state in state zero
         history = {}
         state_list.append(history)
@@ -94,7 +79,6 @@ def get_onehot_state(state, filters_def_dict):
     questions = sorted(filters_def_dict.keys())
     onehot_state = []
     for q in questions:
-        #print(q)
         #get all sorted possible answers
         #some questions have an answer type object and other a normal array
         if filters_def_dict[q].dtype == object:
@@ -120,10 +104,7 @@ def get_onehot_question(question_list, filters_def_dict):
     questions_sorted=np.asarray(sorted(filters_def_dict.keys()))
     all_one_hot = []
     for q in question_list:
-        #q_one_hot = np.zeros(len(questions_sorted))
         i = np.where(questions_sorted==str(q))[0][0]
-        #print(i)
-        #q_one_hot[i] = 1
         all_one_hot.append(i)
     return np.asarray(all_one_hot)
 
@@ -135,8 +116,41 @@ def plot_history(history, name='model', key='loss'):
                    '--', label=name.title()+' Val')
     plt.plot(history.epoch, history.history[key], color=val[0].get_color(),
              label=name.title()+' Train')
-
     plt.xlabel('Epochs')
     plt.ylabel(key.replace('_',' ').title())
     plt.legend()
     plt.xlim([0,max(history.epoch)])
+
+
+if __name__=="__main__":
+    import tensorlayer as tl
+    from utils.load_utils import load_obj, save_obj
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--size",
+                    help="number of products to teach on", type=int)
+    try:
+        products_cat = load_obj('../data/products_table')
+        traffic_cat = load_obj('../data/traffic_table')
+        purchased_cat = load_obj('../data/purchased_table')
+        filters_def_dict = load_obj('../data/filters_def_dict')
+        type_filters = load_obj('../data/type_filters')
+        question_text_df = load_obj('../data/question_text_df')
+        answer_text = load_obj('../data/answer_text')
+        print("Loaded datasets")
+    except:
+        print("Data not found. Create datasets first please")
+    
+    args = parser.parse_args()
+    size = args.size if args.size else 200
+    threshold = 50
+    
+    state_list, question_list = get_data_from_teacher(products_cat, \
+                                                    traffic_cat, \
+                                                    purchased_cat, \
+                                                    question_text_df, \
+                                                    answer_text, \
+                                                    threshold, \
+                                                    size)
+    
+    tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list}, name = '{}_tmp.npy'.format(size))
