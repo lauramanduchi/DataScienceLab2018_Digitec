@@ -35,11 +35,11 @@ def create_categories(df_category):
         df_category: the product table restricted to one single category.
 
     Returns:
-        result: a dict mapping filtersId to new set of possible answers
+        filters_def_dict: a dict mapping filtersId to new set of possible answers
         type_filters: a dict mapping filters to type of filters (option, bin or value or mixed)
-                      {'questionid':'option'|'bin'|'value'|'mixed}
+                      {'questionid':'option'|'bin'|'value'|'mixed'|'no_answer'}
     """
-    result = {}
+    filters_def_dict = {}
     type_filters = {}
     c = 0
     q = 0
@@ -52,7 +52,7 @@ def create_categories(df_category):
         
         # Case filter is of 'option' type (i.e. answer is in defined set of possibilities)
         if (len(valuesProp)==0 and len(values_defOpt)>0):
-            result.update({str(f): values_defOpt})
+            filters_def_dict.update({str(f): values_defOpt})
             type_filters.update({str(f): 'option'}) #case only optionId
         
         # Case filter is of type 'value' or 'bin' (i.e. answer is a value not an id)
@@ -61,12 +61,12 @@ def create_categories(df_category):
             # New answers are 10 bins constructed based on percentiles.
             if len(valuesProp) > 10:
                 bins = np.percentile(valuesProp, [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-                result.update({str(f): bins})
+                filters_def_dict.update({str(f): bins})
                 type_filters.update({str(f): 'bin'})
                 q+=1
             # Else keep the original answers
             else:
-                result.update({str(f): valuesProp})
+                filters_def_dict.update({str(f): valuesProp})
                 type_filters.update({str(f): 'value'})
         
         # If the answers is sometimes stored as an id and sometimes as a value 
@@ -74,16 +74,35 @@ def create_categories(df_category):
         elif (len(values_defOpt)>0 and len(valuesProp)>0): # both filled -> put values in optId
             l = set(values_defOpt)
             l2 = set(valuesProp)
-            result.update({str(f): np.array(l.union(l2))})
+            filters_def_dict.update({str(f): np.array(l.union(l2))})
             type_filters.update({str(f): 'mixed'})
         # If there are no answer.
         else:
             print('No answer is provided for filter {}'.format(f))
             type_filters.update({str(f): 'no_answer'})
     print('Have to categorize {} filters out of {}'.format(q,c))
-    return(result, type_filters)
+    return(filters_def_dict, type_filters)
 
 def eliminate_filters_no_answers(df, type_filters):
+    """To eliminate questions for which there are no 
+    value available in the catalog.
+
+    Note:
+        First you need to create_categories in order to get the
+        type_filters dictonary.
+
+    Args:
+        df: input product_catalog to clean
+        type_filters: input type_filters dict (cf. create_category)
+    
+    Returns:
+        new: new dataframe with the 'no_answer' filters.
+    
+    Example:
+        >>> df = load_obj(products_cat, '../data/products_table')
+        >>> filters_def_dict, type_filters = create_categories(df)
+        >>> df = eliminate_filters_no_answers(df, type_filters)
+    """
     new = df.copy()
     for f in type_filters:
         if type_filters[f]=='no_answer':
@@ -92,16 +111,35 @@ def eliminate_filters_no_answers(df, type_filters):
     return(new)
 
 def map_origAnswer_newAnswer(df, filters_def_dict, type_filters):
-    """ Finds the new answer for each row of the dataframe, returns list of new values.
+    """ Function to construct the final 'answer' column.
+    Note:
+        First run create_category to get filters_def_dcit and 
+        type_filters
+    
+    Args:
+        df: input product_catalog with the row answers
+        filters_def_dict: as described in create_category
+        type_filters: as described in create_category
+    
+    Returns:
+        answers: array of values to be used as the new 'answer' column. 
+                Ordered in the same order as the original df index.
+
+    Example: 
+        >>> df = load_obj(products_cat, '../data/products_table')
+        >>> filters_def_dict, type_filters = create_categories(df)
+        >>> df['answer'] = map_origAnswer_newAnswer(df, filters_def_dict, type_filters)
     """
     answers = []
-    print(len(df.index.values))
     for i in df.index.values:
+        # get current question
         filter = df.loc[i, "PropertyDefinitionId"]
+        # construct the new answer depending on the type of question
         if type_filters[str(filter)]=='option':
             answers.append(df.loc[i,"PropertyDefinitionOptionId"])
         elif type_filters[str(filter)]=='value':
             answers.append(df.loc[i,"PropertyValue"])
+        # if bin filter map original answer to corresponding bin
         elif type_filters[str(filter)]=='bin':
             bins = filters_def_dict[str(filter)]
             n = len(bins)-1
@@ -109,6 +147,7 @@ def map_origAnswer_newAnswer(df, filters_def_dict, type_filters):
             while (df.loc[i,"PropertyValue"]>=bins[j] and j<n):
                 j=j+1
             answers.append(bins[j-1])
+        # if mixed and answer is in id use id otherwise use value
         elif type_filters[str(filter)]=='mixed':
             if np.isnan(df.loc[i,"PropertyDefinitionOptionId"]):
                 answers.append(df.loc[i,"PropertyValue"])
@@ -117,6 +156,25 @@ def map_origAnswer_newAnswer(df, filters_def_dict, type_filters):
     return(answers)
 
 def map_text_new_answer(df, answer_text_df, type_filters, filters_def_dict):
+    """ Finds the string corresponding to the new answer.
+    Note:
+        First construct the new 'answer' column and add it to df.
+    
+    Args:
+        df: input product catalog
+        answer_text_df: dataframe with columns question_id, answer_id and answer_text.
+        type_filters: as described in create_category
+        filters_def_dict: as described in create_category
+    
+    Returns:
+        text_answers: list of text equivalent to each answer ordered as the df dataframe index.
+    
+    Example:
+        >>> df = load_obj(products_cat, '../data/products_table')
+        >>> filters_def_dict, type_filters = create_categories(df)
+        >>> df['answer'] = map_origAnswer_newAnswer(df, filters_def_dict, type_filters)
+        >>> text_answer = map_text_new_answer(df, answer_text_df, type_filters, filters_def_dict)
+    """
     text_answers = []
     for i in df.index.values:
         filter = df.loc[i, "PropertyDefinitionId"] 
