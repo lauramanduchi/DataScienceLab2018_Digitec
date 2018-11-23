@@ -6,24 +6,38 @@ from utils.parser import parse_query_string
 
 
 def keep_only_useful_URLs(df):
+    """ This is a helper function to get the traffic data.
+    It removes the lines where the URL is no parsable (as it 
+    is useless if the parser returns {}).
+
+    Args:
+        df: extract from the traffic data table. Assumes there is a 
+            column "RequestUrl" that has to be checked.
+    Returns:
+        new: input df without the lines where the URL is not parsable.
+    """
     new = df.copy()
     for i in df.index.values:
         if i%1000 == 0:
             print(i)
             print(len(new))
         url = new.loc[i, "RequestUrl"]
+        # eliminate the row if the parser returns empty dict
         if not bool(parse_query_string(url)):
-            new = new.drop(i) # eliminate the row if the parser returns empty dict
+            new = new.drop(i)
     return(new)
 
 def create_categories(df_category):
     """ Defines the new answers. 
+    Note:
+        This is a helper function.
     Args:
         df_category: the product table restricted to one single category.
-    
+
     Returns:
-        result: a dict mapping filters to set of possible answers
+        result: a dict mapping filtersId to new set of possible answers
         type_filters: a dict mapping filters to type of filters (option, bin or value or mixed)
+                      {'questionid':'option'|'bin'|'value'|'mixed}
     """
     result = {}
     type_filters = {}
@@ -35,24 +49,34 @@ def create_categories(df_category):
                                     'PropertyDefinitionOptionId'].dropna().drop_duplicates().values
         valuesProp = df_category.loc[df_category["PropertyDefinitionId"]==f, \
                                     'PropertyValue'].dropna().drop_duplicates().values
+        
+        # Case filter is of 'option' type (i.e. answer is in defined set of possibilities)
         if (len(valuesProp)==0 and len(values_defOpt)>0):
             result.update({str(f): values_defOpt})
             type_filters.update({str(f): 'option'}) #case only optionId
+        
+        # Case filter is of type 'value' or 'bin' (i.e. answer is a value not an id)
         elif (len(values_defOpt)==0 and len(valuesProp)>0): 
-            # case only value ids
+            # Case over than 10 possibles values
+            # New answers are 10 bins constructed based on percentiles.
             if len(valuesProp) > 10:
                 bins = np.percentile(valuesProp, [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
                 result.update({str(f): bins})
                 type_filters.update({str(f): 'bin'})
                 q+=1
+            # Else keep the original answers
             else:
                 result.update({str(f): valuesProp})
                 type_filters.update({str(f): 'value'})
+        
+        # If the answers is sometimes stored as an id and sometimes as a value 
+        # in the original dataframe. Keep the original answer.
         elif (len(values_defOpt)>0 and len(valuesProp)>0): # both filled -> put values in optId
             l = set(values_defOpt)
             l2 = set(valuesProp)
             result.update({str(f): np.array(l.union(l2))})
             type_filters.update({str(f): 'mixed'})
+        # If there are no answer.
         else:
             print('No answer is provided for filter {}'.format(f))
             type_filters.update({str(f): 'no_answer'})
