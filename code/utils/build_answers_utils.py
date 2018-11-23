@@ -383,6 +383,16 @@ def process_all_traffic_answers(traffic_df, purchased_cat, filters_def_dict, typ
 
 
 def question_id_to_text(question, question_df):
+    """Returns the question string given its id.
+
+    Args:
+        question: questionId
+        question_df: as constructed in init_dataframe()
+                     with columns PropertyDefinitionId
+                     and PropertyDefinition (string of question)
+    Returns:
+        question_text: string of the question  
+    """
     try:
         question_text = question_df.loc[question_df["PropertyDefinitionId"] == str(int(question)), "PropertyDefinition"].values[0]
     except IndexError:
@@ -397,6 +407,17 @@ def question_text_to_id(question_text, question_df):
     return question_text
 
 def answer_id_to_text(answer, question, answer_df):
+    """Returns the answer string given its id. 
+
+    Args:
+        answer: list of (new) answerId
+        question: questionId
+        answer_df: dataframe with columns question_id
+                   answer_id and answer_text as constructed
+                   in init_dataframe()
+    Returns:
+        answer_list: list of corresponding strings.      
+    """
     answer_list = []
     for i in answer:
         if i == 'idk':
@@ -410,29 +431,6 @@ def answer_id_to_text(answer, question, answer_df):
                 answer_list.append(i)
             except IndexError:
                 answer_list.append('Not Found: ' + str(i))
-    return (answer_list)
-
-def answer_text_to_id(answer_text, question, answer_df):
-    answer_list = []
-    for i in answer_text:
-        print(i)
-        if i == 'idk':
-            answer_list.append('idk')
-        elif i == 'none':
-            answer_list.append('none')
-        else:
-            try:
-                answer_list.append(answer_df.loc[(answer_df["answer_text"] == str(i)) & (answer_df["question_id"] == int(question)), "answer_id"].astype(float).values[0])
-            #except TypeError:
-            #    answer_list.append(i)
-            except IndexError:
-                print(i)
-                if i.startswith("Not Found"):
-                    print(str(i.split(": ")[1]))
-                    answer_list.append(str(i.split(": ")[1]))
-                else:
-                    answer_list.append(i)
-
     return (answer_list)
 
 
@@ -450,7 +448,6 @@ if __name__=='__main__':
         print("Loaded datsets")
     except:
         print("Creating datasets...")
-        #products_cat, traffic_cat, purchased_cat = init_df()
 
     y = products_cat["ProductId"][10]
     threshold = 50
@@ -460,6 +457,3 @@ if __name__=='__main__':
     answers_y = sample_answers(y, products_cat)
     for key, answer in answers_y.items():
         print(answer_id_to_text(answer, key, answer_text))
-    #final_question_list, product_set, y = random_baseline(products_cat, traffic_cat, purchased_cat, threshold, y)
-    #print("final_question_list: ", final_question_list)
-   # print("length final product set: ", len(get_distinct_products(product_set)))
