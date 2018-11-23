@@ -87,5 +87,5 @@ if __name__=='__main__':
     answers_y = sampler.sample_answers(y, products_cat)
     final_question_list, product_set, y, final_question_text_list, answer_text_list = random_baseline(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text_df, threshold, y, answers_y)
     print("final_question_list: ", final_question_list)
-    print("length final product set: ", len(algo_utils.get_distinct_products(product_set)))
+    print("length final product set: ", len(product_set.ProductId.unique()))
 
