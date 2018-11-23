@@ -20,7 +20,7 @@ from utils.load_utils import load_obj, save_obj, batch
 
 def init_df():
     """ This function loads the data from the SQL server
-    and preprocesses it according to our needs. 
+    and preprocesses it according to our needs.
 
     Note:
         This code can only be run of Digitec's machine.
@@ -29,7 +29,7 @@ def init_df():
         products_cat: extract of product catalog for category 6
         purchased_cat: purchases from products of category 6.
                        only keep purchases where one unique productId was bought.
-        traffic_cat: table containing the filters used for purchases in purchased_cat. 
+        traffic_cat: table containing the filters used for purchases in purchased_cat.
         filters_def_dict: dict where key is questionId
                             value is array of all possible (modified) answers
         type_filters: dict {questionId: 'mixed'|'bin'|'value'|'option'}
@@ -41,11 +41,11 @@ def init_df():
     # Initialize connection to the machine
     engine = create_engine('postgresql://dslab:dslab2018@localhost/dslab')
     c = engine.connect()
-    
+
     # Number of the category to use
     cat = 6
     
-    #================ DATA EXTRACTION =========== # 
+    #================ DATA EXTRACTION =========== #
     # Reduced purchased
     t1 = time.time()
     reduced_purchased = pd.read_sql_query(''' 
@@ -61,7 +61,7 @@ def init_df():
     t2 = time.time()
     print('Created reduced_purchased in {}'.format(t2-t1))
 
-    # Extract relevant products_cat 
+    # Extract relevant products_cat
     t1 = time.time()
     products_cat = pd.read_sql_query('''
     SELECT "ProductId", "BrandId", "ProductTypeId", "PropertyValue", "PropertyDefinitionId", "PropertyDefinitionOptionId"
@@ -81,7 +81,7 @@ def init_df():
     '''.format(cat), c)
     t2 = time.time()
     print('Created productIdsCat in {}s.'.format(t2-t1))
-    
+
     t1 = time.time()
     purchased_cat = pd.merge(productIdsCat, reduced_purchased, \
                     left_on="ProductId", right_on="Items_ProductId", \
@@ -119,7 +119,7 @@ def init_df():
     print('In total there were {} matching rows in the traffic dataset'.format(no_matching_rows))
     traffic_cat = keep_only_useful_URLs(traffic_cat)
     
-    
+
     # ================= DATA PREPROCESSING =============== #
     # New answer definition
     filters_def_dict, type_filters  = create_categories(products_cat)
@@ -134,15 +134,15 @@ def init_df():
               SELECT DISTINCT "PropertyDefinition", "PropertyDefinitionId" from product
               WHERE "ProductTypeId"='6'
               ''', c)
-    print('Done question_text_df')
-    
+    print('Done question-to-text dataframe')
+
     # Get original text of answers
     opt_answer_text_df = pd.read_sql_query('''
               SELECT DISTINCT "PropertyDefinitionOption", "PropertyDefinitionOptionId" from product
               WHERE "ProductTypeId"='6'
               ''', c)
     # Process the original to new answers if necessary
-    print('Begin answer_text')
+    print('Begin answer-to-text dataframe')
     answer_text = pd.DataFrame()
     answer_text["answer_id"] = products_cat["answer"]
     answer_text["question_id"] = products_cat["PropertyDefinitionId"]
