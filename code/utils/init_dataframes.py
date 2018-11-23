@@ -1,24 +1,52 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+This file is used to extract data from the Digitec database and to preprocess it.
+It saves the needed dataframes.
+"""
+
 from sqlalchemy import create_engine,text
 import pandas as pd
 import numpy as np
 import time
 
 from utils.parser import parse_query_string
-from utils.build_answers_utils import keep_only_useful_URLs, create_categories, eliminate_filters_no_answers, map_origAnswer_newAnswer, process_all_traffic_answers, map_text_new_answer
+from utils.build_answers_utils import keep_only_useful_URLs, create_categories, \
+                                      eliminate_filters_no_answers, map_origAnswer_newAnswer, \
+                                      process_all_traffic_answers, map_text_new_answer
 from utils.load_utils import load_obj, save_obj, batch
-        
+
+
 def init_df():
-    # ------------------- DATABASE SETUP ------------- #
-    # initialize connection to the machine
+    """ This function loads the data from the SQL server
+    and preprocesses it according to our needs. 
+
+    Note:
+        This code can only be run of Digitec's machine.
+
+    Returns:
+        products_cat: extract of product catalog for category 6
+        purchased_cat: purchases from products of category 6.
+                       only keep purchases where one unique productId was bought.
+        traffic_cat: table containing the filters used for purchases in purchased_cat. 
+        filters_def_dict: dict where key is questionId
+                            value is array of all possible (modified) answers
+        type_filters: dict {questionId: 'mixed'|'bin'|'value'|'option'}
+        question_text_df: dataframe with columns PropertyDefinitionId
+                          and PropertyDefinition (string of question)
+        answer_text: dataframe with columns question_id, answer_id and answer_text.
+    """
+    # =============== DATABASE SETUP =========== #
+    # Initialize connection to the machine
     engine = create_engine('postgresql://dslab:dslab2018@localhost/dslab')
     c = engine.connect()
-
-    # ------------------- RELEVANT DATAFRAME SETUP ------------- #
     
-    # ---------------  reduced purchased ---------------- #
+    # Number of the category to use
+    cat = 6
+    
+    #================ DATA EXTRACTION =========== # 
+    # Reduced purchased
     t1 = time.time()
     reduced_purchased = pd.read_sql_query(''' 
     SELECT "UserId", "OrderId", "SessionId", "Items_ProductId", "Items_ItemCount"
@@ -33,10 +61,7 @@ def init_df():
     t2 = time.time()
     print('Created reduced_purchased in {}'.format(t2-t1))
 
-    # Number of the category to use
-    cat = 6
-
-    # ---------------- Extract relevant products_cat ------------- #
+    # Extract relevant products_cat 
     t1 = time.time()
     products_cat = pd.read_sql_query('''
     SELECT "ProductId", "BrandId", "ProductTypeId", "PropertyValue", "PropertyDefinitionId", "PropertyDefinitionOptionId"
@@ -47,7 +72,7 @@ def init_df():
     print('Created product_cat in {}s.'.format(t2-t1))
     print('Found {} items'.format(len(products_cat['ProductId'].drop_duplicates().values)))
 
-    # ------------- Just productId (not sure we really need that) --- #
+    # Products purchased from selected category
     t1 = time.time()
     productIdsCat = pd.read_sql_query('''
     SELECT DISTINCT "ProductId"
@@ -56,8 +81,7 @@ def init_df():
     '''.format(cat), c)
     t2 = time.time()
     print('Created productIdsCat in {}s.'.format(t2-t1))
-
-    # -------- All products purchased from selected category ----- #
+    
     t1 = time.time()
     purchased_cat = pd.merge(productIdsCat, reduced_purchased, \
                     left_on="ProductId", right_on="Items_ProductId", \
@@ -66,10 +90,8 @@ def init_df():
     print('Created purchased_Cat in {}s.'.format(t2-t1))
     print('Found {} sold items. And {} unique product id'.format(len(purchased_cat), len(purchased_cat["ProductId"])))
 
-
-    # --------- Extract of relevant traffic -------- #
+    # Extract of relevant traffic data (batch if necessary)
     traffic_cat = pd.DataFrame()
-    
     no_sessionId_found = 0
     no_matching_rows = 0
     SessionIds = purchased_cat["SessionId"].drop_duplicates().values.astype(int)
@@ -77,11 +99,11 @@ def init_df():
     traffic_cat = pd.DataFrame()
     batch_size = 2000
     batches = batch(SessionIds, n=batch_size)
-
     i=0
     for b in batches:
         print("Processing batch: {}".format(i))
         i+=1
+        # Only extract traffic data that can be parsed
         s = text('''SELECT "RequestUrl", "Timestamp", "SessionId" FROM traffic 
                 WHERE ("SessionId" IN {}
                  AND ("RequestUrl" LIKE '%opt%'
@@ -97,28 +119,29 @@ def init_df():
     print('In total there were {} matching rows in the traffic dataset'.format(no_matching_rows))
     traffic_cat = keep_only_useful_URLs(traffic_cat)
     
-
-    # ------------------- NEW ANSWERS SETUP - PRODUCT CATALOG ------------- #
+    
+    # ================= DATA PREPROCESSING =============== #
+    # New answer definition
     filters_def_dict, type_filters  = create_categories(products_cat)
     products_cat = eliminate_filters_no_answers(products_cat, type_filters)
     products_cat["answer"] = map_origAnswer_newAnswer(products_cat, filters_def_dict, type_filters)
     
-    # ------------- Map traffic data to new answers --------------- #
-    #traffic_cat = process_all_traffic_answers(traffic_cat, purchased_cat, filters_def_dict, type_filters)
+    # Map traffic data to new answers
+    traffic_cat = process_all_traffic_answers(traffic_cat, purchased_cat, filters_def_dict, type_filters)
 
-    # ------------- get text of the question ------------- #
+    # Get text of the questions
     question_text_df = pd.read_sql_query('''
               SELECT DISTINCT "PropertyDefinition", "PropertyDefinitionId" from product
               WHERE "ProductTypeId"='6'
               ''', c)
     print('Done question_text_df')
-    # ---------- get text of answer ---------- #
+    
+    # Get original text of answers
     opt_answer_text_df = pd.read_sql_query('''
               SELECT DISTINCT "PropertyDefinitionOption", "PropertyDefinitionOptionId" from product
               WHERE "ProductTypeId"='6'
               ''', c)
-    save_obj(opt_answer_text_df, '../data/opt_answer_text_df')
-
+    # Process the original to new answers if necessary
     print('Begin answer_text')
     answer_text = pd.DataFrame()
     answer_text["answer_id"] = products_cat["answer"]
@@ -128,6 +151,9 @@ def init_df():
     return products_cat, traffic_cat, purchased_cat, filters_def_dict, type_filters, question_text_df, answer_text
 
 if __name__=="__main__":
+    """ 
+    Call the init function and save all the objects.
+    """
     products_cat, traffic_cat, purchased_cat, filters_def_dict, type_filters, question_text_df, answer_text = init_df()
     save_obj(products_cat, '../data/products_table')
     save_obj(traffic_cat, '../data/traffic_table')
@@ -136,4 +162,3 @@ if __name__=="__main__":
     save_obj(type_filters, '../data/type_filters')
     save_obj(question_text_df, '../data/question_text_df')
     save_obj(answer_text, '../data/answer_text')
-
