@@ -123,6 +123,7 @@ def init_df():
 
     # Adding Brands (in a separate column) as filter in products_cat
     print("Adding brands as property in dataframe...")
+    i = 0
     brandId = 99999
     for p in products_cat["ProductId"].drop_duplicates():
         brand = products_cat.loc[products_cat['ProductId'] == p]["BrandId"].drop_duplicates()
@@ -133,6 +134,7 @@ def init_df():
                                   "PropertyDefinitionOptionId"],
                            name=str(int(i + len(products_cat) + 1)))
         products_cat = products_cat.append(newrow)
+        i += 1
     print("Added brands as property")
 
 
