@@ -31,12 +31,10 @@ If run_number is not specified the timestep is used instead.
 
 # ============= GENERAL SETUP =========== #
 time.time()
-t = time.strftime('%d%b%y_%H%M%S')
+t = time.strftime('%H%M%S')
 print("Started on: {}".format(time.strftime('%d-%b-%y at %H:%M:%S')))
 cwd = os.getcwd()
-checkpoint_dir = cwd+'/../runs_MaxMI/' + t + '/'
-os.makedirs(checkpoint_dir, 0o777)
-print('Saving to ' + checkpoint_dir)
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--size",
@@ -59,6 +57,13 @@ alpha = args.alpha if args.alpha else 0.0
 p_idk = args.pidk if args.pidk else 0.0
 p_2a = args.p2a if args.p2a else 0.0
 p_3a = args.p3a if args.p3a else 0.0
+
+
+suffix = 'pidk{}_p2a{}_p3a{}_hist{}_s{}_t{}'.format(p_idk,p_2a,p_3a,alpha,size_test,t)
+checkpoint_dir = cwd+'/../runs_MaxMI/'  + suffix + '/'
+os.makedirs(checkpoint_dir, 0o777)
+print('Saving to ' + checkpoint_dir)
+
 
 # To remove future warning from being printed out
 warnings.simplefilter(action='ignore', category=FutureWarning)
