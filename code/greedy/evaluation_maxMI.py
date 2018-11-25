@@ -10,6 +10,7 @@ import pandas as pd
 import argparse
 import warnings
 
+from utils.algo_utils import get_proba_Y_distribution
 from utils.load_utils import *
 from utils.init_dataframes import init_df
 import utils.algo_utils as algo_utils
@@ -103,7 +104,9 @@ with open(checkpoint_dir +'/parameters.txt', 'w+') as f:
     f.write('Test set size: {} \n Probability of answering I dont know: {} \n Probability of giving 2 answers: {} Probability of giving 3 answers: {} \n'.format(size_test, p_idk, p_2a, p_3a))
     f.write('History: {} \nAlpha parameter: {}'.format(use_history, alpha))
 
-y_array = np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = size_test)
+#probabilities of products given traffic
+p_y = get_proba_Y_distribution(products_cat, purchased_cat, alpha=1)["final_proba"].values
+y_array = np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = size_test, p = p_y)
 threshold = 50
 length_opt = []
 length_rdm = []
