@@ -44,7 +44,7 @@ def get_next_question_opt(state, product_set, traffic_set, purchased_set, thresh
     return next_question, done
 
 
-def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text, threshold, size=200): 
+def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text, threshold, size=200, p_idk=0.1, p_2a = 0.1, p_3a=0.1): 
     """ Compute the trajectory for all the products following the entropy principle, and divide them in states and actions.
     Args:
         original product catalog, traffic table and purchased articles from the selected category.
@@ -54,7 +54,7 @@ def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, question_tex
     state_list = []
     all_questions_list = []
     for y in np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = size):
-        answers_y = sample_answers(y, products_cat, p_idk=0.1, p_2a = 0.1, p_3a=0.1) 
+        answers_y = sample_answers(y, products_cat, p_idk, p_2a, p_3a) 
         question_list, _, _, _, _ = max_info_algorithm(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text,
                             threshold, y,  answers_y)
         # first state in state zero
@@ -126,9 +126,6 @@ if __name__=="__main__":
     import tensorlayer as tl
     from utils.load_utils import load_obj, save_obj
     import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--size",
-                    help="number of products to teach on", type=int)
     try:
         products_cat = load_obj('../data/products_table')
         traffic_cat = load_obj('../data/traffic_table')
@@ -141,9 +138,28 @@ if __name__=="__main__":
     except:
         print("Data not found. Create datasets first please")
     
-    args = parser.parse_args()
-    size = args.size if args.size else 200
     threshold = 50
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--size",
+                    help="number of products to teach on", type=int)
+    parser.add_argument("-hist", "--use_history",
+                    help="Boolean to indicate whether to use history data", type=bool)
+    parser.add_argument("-a", "--alpha",
+                    help="alpha parameter, the bigger it is the more importance is given to history", type=float)
+    parser.add_argument("-pidk", "--pidk",
+                    help="proba of user answering I don't know to a question", type=float)
+    parser.add_argument("-p2a", "--p2a",
+                    help="proba of user giving 2 answers to a question", type=float)
+    parser.add_argument("-p3a", "--p3a",
+                    help="proba of user giving 3 answers to a question", type=float)
+
+    args = parser.parse_args()
+    size_test = args.size if args.size else 200
+    use_history = args.use_history if args.use_history else False
+    alpha = args.alpha if args.alpha else 0.0
+    p_idk = args.pidk if args.pidk else 0.0
+    p_2a = args.p2a if args.p2a else 0.0
+    p_3a = args.p3a if args.p3a else 0.0
     
     state_list, question_list = get_data_from_teacher(products_cat, \
                                                     traffic_cat, \
@@ -153,4 +169,4 @@ if __name__=="__main__":
                                                     threshold, \
                                                     size)
     
-    tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list}, name = '{}_tmp.npy'.format(size))
+    tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list}, name = 's{}_p2a{}_p3a{}_pidk{}_a{}_tmp.npy'.format(size, p_2a, p_3a, p_idk, alpha))
