@@ -154,7 +154,7 @@ if __name__=="__main__":
                     help="proba of user giving 3 answers to a question", type=float)
 
     args = parser.parse_args()
-    size_test = args.size if args.size else 200
+    size = args.size if args.size else 200
     use_history = args.use_history if args.use_history else False
     alpha = args.alpha if args.alpha else 0.0
     p_idk = args.pidk if args.pidk else 0.0
