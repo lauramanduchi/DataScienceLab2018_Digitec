@@ -72,7 +72,7 @@ def get_proba_Y_distribution(products_cat, purchased_cat, alpha=1):
             purchased_cat: purchased table [ProductId	UserId	OrderId	SessionId	Items_ProductId	Items_ItemCount]
             alpha: alpha = 0 means uniform distribution for all the products, otherwise the bigger it is the more history is taken into account
         Returns:
-            distribution:
+            distribution: probability of the products according to history
     """
     # step 1 compute uniform distribution
     distribution = pd.DataFrame()
