@@ -72,17 +72,16 @@ def mutual_inf(question, product_set, traffic_set, purchased_set):
     return (short_mutual_info)
 
 
-def opt_step(question_set, product_set, traffic_set, purchased_set, use_history = False, df_history = 0, alpha = 2):
+def opt_step(question_set, product_set, traffic_set, purchased_set, a_hist = 0, df_history = 0):
     """Maximal mutual information greedy step to select the best questions to ask given the history:
     Args:
         question_set: set of questions already asked
         product_set: product table [ProductId	BrandId	ProductTypeId	PropertyValue	PropertyDefinitionId	PropertyDefinitionOptionId	answer]
         traffic_set: traffic table [SessionId	answers_selected	Items_ProductId]
         purchased_set: purchased table [	ProductId	UserId	OrderId	SessionId	Items_ProductId	Items_ItemCount]
-        use_history (default = False): boolean, if True then Entropy will be multiplied by the history probability of filters
+        a_hist: (default = 0) parameter to determine the importance of history filters, the higher the more important history is. 0 means no history
         df_history (default = 0): history table obtained with algo_utils.create_history(traffic_cat, question_text_df)
                                   [ProductId	text	frequency]
-        alpha (default = 2): parameter to determine the importance of history data, the higher the more important history is
     Returns:
         next_question: questionId to ask
      """
@@ -98,8 +97,8 @@ def opt_step(question_set, product_set, traffic_set, purchased_set, use_history 
     MI_matrix[:,0] = list(question_set)
 
     #Prior on filters already been used by users (more user-friendly)
-    if use_history:
-        Q_distr = algo_utils.get_proba_Q_distribution(list(question_set), df_history, alpha)
+    if a_hist > 0:
+        Q_distr = algo_utils.get_proba_Q_distribution(list(question_set), df_history, a_hist)
         MI_matrix[:, 1] = np.multiply(mutual_array, Q_distr)
     else:
         MI_matrix[:,1] = mutual_array
@@ -112,8 +111,8 @@ def opt_step(question_set, product_set, traffic_set, purchased_set, use_history 
 
 def max_info_algorithm(product_set, traffic_set, purchased_set, \
                        question_text_df, answer_text_df, threshold, \
-                       y, answers_y, use_history = False, df_history = 0, \
-                       alpha = 2, first_questions = None):
+                       y, answers_y, a_hist = 1, df_history = 0, \
+                       first_questions = None):
     """Maximan mutual information algorithm to select the best subset of questions to ask:
     Args:
         product_set: product table [ProductId	BrandId	ProductTypeId	PropertyValue	PropertyDefinitionId	PropertyDefinitionOptionId	answer]
@@ -124,10 +123,10 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, \
         threshold: max length of final set of products
         y: product selected for the algorithm
         answers_y: dict of question: np.array(answers), obtained with function: sample_answers(y, products_cat)
-        use_history (default = False): boolean, True: use history data
+        a_hist (default = 0): parameter to determine the importance of history filters, the higher the more important history is. 0 means no history
         df_history (default = 0): history table obtained with algo_utils.create_history(traffic_cat, question_text_df)
                                   [ProductId	text	frequency]
-        alpha (default = 2): parameter to determine the importance of history data, the higher the more important history is
+
         first_questions (default = None): optimization step, precompute the firsts questions, create new if there are none
     Returns:
         final_question_list: sequence of questionId to ask
@@ -152,7 +151,7 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, \
         n_first_q = 3 
         print("Optimization: computing first {} questions".format(n_first_q))
         for i in range(n_first_q):
-            first_question = opt_step(first_question_set, product_set, traffic_set, purchased_set, use_history, df_history, alpha)
+            first_question = opt_step(first_question_set, product_set, traffic_set, purchased_set, a_hist, df_history)
             first_questions.append(first_question)
             first_question_set = first_question_set.difference(set(first_questions))
 
@@ -185,7 +184,7 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, \
 
     #Perform greedy step until the subset of products is smaller than a certain threshold
     while not (distinct_products < threshold or len(question_set) == 0):
-        next_question = opt_step(question_set, product_set, traffic_set, purchased_set, use_history, df_history, alpha)
+        next_question = opt_step(question_set, product_set, traffic_set, purchased_set, a_hist, df_history)
         print("Next question is filter : {}".format(next_question))
         question_text = question_id_to_text(next_question, question_text_df)
         print("Question is: {}".format(question_text))
@@ -252,9 +251,8 @@ if __name__=='__main__':
                                                                                                          answer_text_df, \
                                                                                                          threshold, y, \
                                                                                                          answers_y, \
-                                                                                                         use_history = True, \
-                                                                                                         df_history = df_history,
-                                                                                                         alpha = 2)
+                                                                                                         a_hist = 1, \
+                                                                                                         df_history = df_history)
     end_time = time.time()
     print("final_question_list: ", final_question_list)
     print("length final product set: ", len(product_set.ProductId.unique()))

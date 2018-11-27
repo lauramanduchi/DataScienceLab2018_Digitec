@@ -192,7 +192,7 @@ class MyApplication(Frame):
         print("Question set: {}".format(self.question_set))
 
         # Getting next question from our algo's opt_step # TODO Modify update step for other algorithm
-        next_question = opt_step(self.question_set, self.product_set, self.traffic_set, self.purchased_set, use_history=False, df_history=0, alpha=2)
+        next_question = opt_step(self.question_set, self.product_set, self.traffic_set, self.purchased_set, a_hist=0, df_history=0)
         print("Next question: {}".format(next_question))
         next_question_text = question_id_to_text(next_question, self.question_text_df)
 

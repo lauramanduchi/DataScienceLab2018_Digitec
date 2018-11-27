@@ -40,10 +40,8 @@ cwd = os.getcwd()
 parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--size",
                     help="number of products to test on", type=int)
-parser.add_argument("-hist", "--use_history",
-                    help="Boolean to indicate whether to use history data", type=bool)
-parser.add_argument("-a", "--alpha",
-                    help="alpha parameter, the bigger it is the more importance is given to history", type=float)
+parser.add_argument("-a", "--a_hist",
+                    help="alpha parameter, the bigger it is the more importance is given to history, 0 means no history", type=float)
 parser.add_argument("-pidk", "--pidk",
                     help="proba of user answering I don't know to a question", type=float)
 parser.add_argument("-p2a", "--p2a",
@@ -53,14 +51,13 @@ parser.add_argument("-p3a", "--p3a",
 
 args = parser.parse_args()
 size_test = args.size if args.size else 25
-use_history = args.use_history if args.use_history else False
-alpha = args.alpha if args.alpha else 0.0
+a_hist = args.a_hist if args.a_hist else 0.0
 p_idk = args.pidk if args.pidk else 0.0
 p_2a = args.p2a if args.p2a else 0.0
 p_3a = args.p3a if args.p3a else 0.0
 
 
-suffix = 'pidk{}_p2a{}_p3a{}_hist{}_s{}_t{}'.format(p_idk,p_2a,p_3a,alpha,size_test,t)
+suffix = 'pidk{}_p2a{}_p3a{}_hist{}_s{}_t{}'.format(p_idk,p_2a,p_3a,a_hist,size_test,t)
 checkpoint_dir = cwd+'/../runs_MaxMI/'  + suffix + '/'
 os.makedirs(checkpoint_dir, 0o777)
 print('Saving to ' + checkpoint_dir)
@@ -90,7 +87,7 @@ except:
     print("Created datasets")
 
 df_history = 0
-if use_history:
+if a_hist > 0:
     try:
         df_history = load_obj('../data/df_history')
     except:
@@ -102,7 +99,7 @@ if use_history:
 # ============= INIT VARIABLES ========== #
 with open(checkpoint_dir +'/parameters.txt', 'w+') as f:
     f.write('Test set size: {} \n Probability of answering I dont know: {} \n Probability of giving 2 answers: {} Probability of giving 3 answers: {} \n'.format(size_test, p_idk, p_2a, p_3a))
-    f.write('History: {} \nAlpha parameter: {}'.format(use_history, alpha))
+    f.write('Alpha parameter: {}'.format(a_hist))
 
 #probabilities of products given traffic
 p_y = get_proba_Y_distribution(products_cat, purchased_cat, alpha=1)["final_proba"].values
@@ -132,7 +129,7 @@ first_question_set = set(algo_utils.get_questions(products_cat))
 n_first_q = 3 
 print("Optimization: computing first {} questions without history beforehand".format(n_first_q))
 for i in range(n_first_q):
-    first_question = opt_step(first_question_set, products_cat, traffic_cat, purchased_cat, use_history, df_history, alpha)
+    first_question = opt_step(first_question_set, products_cat, traffic_cat, purchased_cat, a_hist, df_history)
     first_questions.append(first_question)
     first_question_set = first_question_set.difference(set(first_questions))
 
@@ -151,9 +148,8 @@ for y in y_array:
                                                                                                          threshold, 
                                                                                                          y, 
                                                                                                          answers_y,
-                                                                                                         use_history,
+                                                                                                         a_hist,
                                                                                                          df_history,
-                                                                                                         alpha,
                                                                                                          first_questions)
     # Save results for MaxMI
     print('the length of optimal eliminate filter was {}'.format(len(final_question_list)))
@@ -186,7 +182,7 @@ for y in y_array:
 # Save the summary statistics of the run in summary.txt
 with open(checkpoint_dir +'/summary.txt', 'w+') as f:
     f.write('Test set size: {} \n Probability of answering I dont know: {} \n Probability of giving 2 answers: {} Probability of giving 3 answers: {} \n'.format(size_test, p_idk, p_2a, p_3a))
-    f.write('History: {} \nAlpha parameter: {}'.format(use_history, alpha))
+    f.write('Alpha history parameter: {}'.format(a_hist))
     f.write('Avg number of questions for optimal {} \n'.format(np.mean(np.asarray(length_opt))))
     f.write('Median number of questions for optimal {} \n'.format(np.median(np.asarray(length_opt))))
     f.write('Std number of questions for optimal {} \n'.format(np.std(np.asarray(length_opt))))

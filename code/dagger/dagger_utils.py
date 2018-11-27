@@ -44,7 +44,7 @@ def get_next_question_opt(state, product_set, traffic_set, purchased_set, thresh
     return next_question, done
 
 
-def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, use_history, df_history, alpha, question_text_df, answer_text, threshold, size=200, p_idk=0.1, p_2a = 0.1, p_3a=0.1): 
+def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, a_hist, df_history, question_text_df, answer_text, threshold, size=200, p_idk=0.1, p_2a=0.1, p_3a=0.1):
     """ Compute the trajectory for all the products following the entropy principle, and divide them in states and actions.
     Args:
         original product catalog, traffic table and purchased articles from the selected category.
@@ -57,7 +57,7 @@ def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, use_history,
     n_first_q = 3 
     print("Optimization: computing first {} questions without history beforehand".format(n_first_q))
     for i in range(n_first_q):
-        first_question = opt_step(first_question_set, products_cat, traffic_cat, purchased_cat, use_history, df_history, alpha)
+        first_question = opt_step(first_question_set, products_cat, traffic_cat, purchased_cat, a_hist, df_history)
         first_questions.append(first_question)
         first_question_set = first_question_set.difference(set(first_questions))
     state_list = []
@@ -75,9 +75,8 @@ def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, use_history,
                                                         threshold, 
                                                         y, 
                                                         answers_y,
-                                                        use_history,
+                                                        a_hist,
                                                         df_history,
-                                                        alpha,
                                                         first_questions)
         # first state in state zero
         history = {}
@@ -171,10 +170,8 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--size",
                     help="number of products to teach on", type=int)
-    parser.add_argument("-hist", "--use_history",
-                    help="Boolean to indicate whether to use history data", type=bool)
-    parser.add_argument("-a", "--alpha",
-                    help="alpha parameter, the bigger it is the more importance is given to history", type=float)
+    parser.add_argument("-a", "--a_hist",
+                    help="alpha parameter, 0 means no history filters used, ow the bigger it is the more importance is given to history", type=float)
     parser.add_argument("-pidk", "--pidk",
                     help="proba of user answering I don't know to a question", type=float)
     parser.add_argument("-p2a", "--p2a",
@@ -183,8 +180,7 @@ if __name__=="__main__":
                     help="proba of user giving 3 answers to a question", type=float)
     args = parser.parse_args()
     size = args.size if args.size else 200
-    use_history = args.use_history if args.use_history else False
-    alpha = args.alpha if args.alpha else 0.0
+    a_hist = args.a_hist if args.a_hist else 0.0
     p_idk = args.pidk if args.pidk else 0.0
     p_2a = args.p2a if args.p2a else 0.0
     p_3a = args.p3a if args.p3a else 0.0
@@ -192,12 +188,11 @@ if __name__=="__main__":
     state_list, question_list = get_data_from_teacher(products_cat,
                                                     traffic_cat, 
                                                     purchased_cat, 
-                                                    use_history, 
-                                                    df_history, 
-                                                    alpha, 
+                                                    a_hist,
+                                                    df_history,
                                                     question_text_df,
                                                     answer_text,
                                                     threshold,
                                                     size)
     
-    tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list}, name = 's{}_p2a{}_p3a{}_pidk{}_a{}_tmp.npy'.format(size, p_2a, p_3a, p_idk, alpha))
+    tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list}, name = 's{}_p2a{}_p3a{}_pidk{}_a{}_tmp.npy'.format(size, p_2a, p_3a, p_idk, a_hist))
