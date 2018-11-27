@@ -181,7 +181,10 @@ if __name__=="__main__":
                     help="proba of user giving 2 answers to a question", type=float)
     parser.add_argument("-p3a", "--p3a",
                     help="proba of user giving 3 answers to a question", type=float)
-
+    parser.add_argument("-hist", "--use_history",
+                    help="Boolean to indicate whether to use history data", type=bool)
+    parser.add_argument("-a", "--alpha",
+                    help="alpha parameter, the bigger it is the more importance is given to history", type=float)
     args = parser.parse_args()
     size = args.size if args.size else 200
     use_history = args.use_history if args.use_history else False
@@ -189,7 +192,6 @@ if __name__=="__main__":
     p_idk = args.pidk if args.pidk else 0.0
     p_2a = args.p2a if args.p2a else 0.0
     p_3a = args.p3a if args.p3a else 0.0
-    
 
     state_list, question_list = get_data_from_teacher(products_cat,
                                                     traffic_cat, 
