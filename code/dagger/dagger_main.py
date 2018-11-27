@@ -76,7 +76,12 @@ if __name__=='__main__':
         save_obj(question_text_df, '../data/question_text_df')
         save_obj(answer_text, '../data/answer_text')
         print("Created datasets")
-
+    try:
+        df_history = load_obj('../data/df_history')
+    except:
+        df_history = algo_utils.create_history(traffic_cat, question_text_df)
+        save_obj(df_history, '../data/df_history')
+        print("Created history")
 
     # ============= GETTING TEACHER DATA ========== #
     print("#"*50) #
@@ -92,14 +97,18 @@ if __name__=='__main__':
         print("Data not found; teacher is creating it \n")
 
         # Get question list and state_list of the form : {"q1":[a1,a2], "q2":[a3], "q3":[a4, a6] ..}
+        alpha=1
+        use_history=True
         state_list, question_list = dagger_utils.get_data_from_teacher(products_cat,
                                                                        traffic_cat,
                                                                        purchased_cat,
+                                                                       use_history,
+                                                                       df_history,
+                                                                       alpha,
                                                                        question_text_df,
                                                                        answer_text,
                                                                        FLAGS.threshold,
                                                                        FLAGS.in_maxMI_size)
-
         # Save data as _tmp.npy file (to be reused in next iteration)
         tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list}, name='_tmp.npy')
         print('Saved teacher data')

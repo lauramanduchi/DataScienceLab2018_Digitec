@@ -10,10 +10,10 @@ import matplotlib.pyplot as plt
 import warnings
 
 import utils.algo_utils as algo_utils
-from greedy.MaxMI_Algo import max_info_algorithm
+from greedy.MaxMI_Algo import max_info_algorithm, opt_step
 import greedy.MaxMI_Algo as MaxMI
 from utils.sampler import sample_answers
-
+from utils.algo_utils import get_proba_Y_distribution
 
 def get_products(state, product_set, traffic_set=[], purchased_set=[]):
     """ from the state dict get the remaining products """
@@ -44,19 +44,41 @@ def get_next_question_opt(state, product_set, traffic_set, purchased_set, thresh
     return next_question, done
 
 
-def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text, threshold, size=200, p_idk=0.1, p_2a = 0.1, p_3a=0.1): 
+def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, use_history, df_history, alpha, question_text_df, answer_text, threshold, size=200, p_idk=0.1, p_2a = 0.1, p_3a=0.1): 
     """ Compute the trajectory for all the products following the entropy principle, and divide them in states and actions.
     Args:
         original product catalog, traffic table and purchased articles from the selected category.
     Returns:
         state_list (questions, answers made) and question_list (actions)
     """
+    # Optimization: compute first_questions outside product loop
+    first_questions = []
+    first_question_set = set(algo_utils.get_questions(products_cat))
+    n_first_q = 3 
+    print("Optimization: computing first {} questions without history beforehand".format(n_first_q))
+    for i in range(n_first_q):
+        first_question = opt_step(first_question_set, products_cat, traffic_cat, purchased_cat, use_history, df_history, alpha)
+        first_questions.append(first_question)
+        first_question_set = first_question_set.difference(set(first_questions))
     state_list = []
     all_questions_list = []
-    for y in np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = size):
+    p_y = get_proba_Y_distribution(products_cat, purchased_cat, alpha=1)["final_proba"].values
+    y_array = np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = size, p = p_y)
+    
+    for y in y_array:
         answers_y = sample_answers(y, products_cat, p_idk, p_2a, p_3a) 
-        question_list, _, _, _, _ = max_info_algorithm(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text,
-                            threshold, y,  answers_y)
+        question_list, _, _, _, _ = max_info_algorithm(products_cat, 
+                                                        traffic_cat, 
+                                                        purchased_cat,
+                                                        question_text_df,
+                                                        answer_text,
+                                                        threshold, 
+                                                        y, 
+                                                        answers_y,
+                                                        use_history,
+                                                        df_history,
+                                                        alpha,
+                                                        first_questions)
         # first state in state zero
         history = {}
         state_list.append(history)
@@ -137,6 +159,13 @@ if __name__=="__main__":
         print("Loaded datasets")
     except:
         print("Data not found. Create datasets first please")
+    try:
+        df_history = load_obj('../data/df_history')
+    except:
+        df_history = algo_utils.create_history(traffic_cat, question_text_df)
+        save_obj(df_history, '../data/df_history')
+        print("Created history")
+
     
     threshold = 50
     parser = argparse.ArgumentParser()
@@ -161,12 +190,16 @@ if __name__=="__main__":
     p_2a = args.p2a if args.p2a else 0.0
     p_3a = args.p3a if args.p3a else 0.0
     
-    state_list, question_list = get_data_from_teacher(products_cat, \
-                                                    traffic_cat, \
-                                                    purchased_cat, \
-                                                    question_text_df, \
-                                                    answer_text, \
-                                                    threshold, \
+
+    state_list, question_list = get_data_from_teacher(products_cat,
+                                                    traffic_cat, 
+                                                    purchased_cat, 
+                                                    use_history, 
+                                                    df_history, 
+                                                    alpha, 
+                                                    question_text_df,
+                                                    answer_text,
+                                                    threshold,
                                                     size)
     
     tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list}, name = 's{}_p2a{}_p3a{}_pidk{}_a{}_tmp.npy'.format(size, p_2a, p_3a, p_idk, alpha))
