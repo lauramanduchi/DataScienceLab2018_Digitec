@@ -11,3 +11,4 @@ code/.ipynb_checkpoints/
 code/utils/__pycache__/
 code/dagger/__pycache__/
 /data_old/
+*.npy
