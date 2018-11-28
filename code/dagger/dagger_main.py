@@ -77,7 +77,8 @@ if __name__=='__main__':
         save_obj(question_text_df, '../data/question_text_df')
         save_obj(answer_text, '../data/answer_text')
         print("Created datasets")
-    #dowloading history for prior
+
+    # Dowloading history for prior
     try:
         df_history = load_obj('../data/df_history')
     except:
@@ -98,8 +99,8 @@ if __name__=='__main__':
         # Run MaxMI and get the output set of (state, question) for number of products defined in flags (default: 200)
         print("Data not found; teacher is creating it \n")
 
-        #Get question list and state_list of the form : {"q1":[a1,a2], "q2":[a3], "q3":[a4, a6] ..}
-        #Use history
+        # Get question list and state_list of the form : {"q1":[a1,a2], "q2":[a3], "q3":[a4, a6] ..}
+        # Use history
         a_hist=1
         state_list, question_list = dagger_utils.get_data_from_teacher(products_cat,
                                                                        traffic_cat,
@@ -110,7 +111,7 @@ if __name__=='__main__':
                                                                        answer_text,
                                                                        FLAGS.threshold,
                                                                        FLAGS.in_maxMI_size)
-        #Save data as _tmp.npy file (to be reused in next iteration)
+        # Save data as _tmp.npy file (to be reused in next iteration)
         tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list}, name='_tmp.npy')
         print('Saved teacher data')
 
@@ -138,9 +139,9 @@ if __name__=='__main__':
 
 
     # ============= TRAINING WITH INITIAL TEACHER DATA ========== #
-    print('Converting labels to one hot encoding..')
-    one_hot_labels = dagger_utils.get_onehot_question(question_list, filters_def_dict)
-    print('Shape of one hot labels {}'.format(np.shape(one_hot_labels)))
+    print('Converting labels to index encoding..')
+    one_ind_labels = dagger_utils.get_index_question(question_list, filters_def_dict)
+    print('Shape of one index labels {}'.format(np.shape(one_ind_labels)))
     number_filters = len(filters_def_dict.keys())
     print('Number available filters is {}'.format(number_filters))
 
@@ -148,12 +149,12 @@ if __name__=='__main__':
     onehot_state_list = []
     mask_list = []
 
-    # Create a mask to prevent the network from asking the same questions
+    # Create a mask list to prevent the network from asking the same questions
     for state in state_list:
         question_asked = state.keys()
-        one_hot_questions_asked = dagger_utils.get_onehot_question(question_asked, filters_def_dict)
+        one_ind_questions_asked = dagger_utils.get_index_question(question_asked, filters_def_dict)
         mask = np.ones(number_filters)
-        for q in one_hot_questions_asked:  # If question was already asked, set corresponding mask value to 0
+        for q in one_ind_questions_asked:  # If question was already asked, set corresponding mask value to 0
             mask[q] = 0
         # Get one hot state
         onehot_state = dagger_utils.get_onehot_state(state, filters_def_dict)
@@ -178,7 +179,7 @@ if __name__=='__main__':
 
     # Fit the model
     model_history = model.fit([one_hot_state_list, mask_list],
-                              one_hot_labels,
+                              one_ind_labels,
                               epochs=FLAGS.n_epochs,
                               batch_size=FLAGS.batch_size,
                               validation_split=FLAGS.val_split,  # or validation_data=(val_state, val_labels) #TODO check
@@ -194,7 +195,7 @@ if __name__=='__main__':
     print(model_history.history.keys())
 
 
-    # ============= COLLECT MORE DATA (FROM TEACHER) & RETRAIN NETWORK AT EACH EPISODE ========== #
+    # ============= COLLECT MORE DATA (EXPLORING NEW STATES) & RETRAIN NETWORK AT EACH EPISODE ========== #
     output_file = open(checkpoint_dir+'/results/results.txt', 'w')
     n_episodes = FLAGS.n_episodes
 
@@ -227,10 +228,10 @@ if __name__=='__main__':
             # Get list of questions already asked
             question_asked = state.keys()
             # Convert to one-hot
-            one_hot_questions_asked = dagger_utils.get_onehot_question(question_asked, filters_def_dict)
+            one_ind_questions_asked = dagger_utils.get_index_question(question_asked, filters_def_dict)
             # Create the mask before the softmax layer (cannot ask twice the same question)
             mask = np.ones(number_filters)
-            for q in one_hot_questions_asked:  # If question was already asked, set corresponding mask value to 0
+            for q in one_ind_questions_asked:  # If question was already asked, set corresponding mask value to 0
                 mask[q] = 0
             
             # Get one hot state encoding
@@ -255,8 +256,8 @@ if __name__=='__main__':
                     # Append the new state s(t) to the training_set
                     one_hot_state_list = np.concatenate((one_hot_state_list, onehot_state))
                     mask_list = np.concatenate((mask_list, mask))
-                    one_hot_question = dagger_utils.get_onehot_question([q_true], filters_def_dict)[0]
-                    one_hot_labels = np.append(one_hot_labels, one_hot_question)
+                    one_ind_question = dagger_utils.get_index_question([q_true], filters_def_dict)[0]
+                    one_ind_labels = np.append(one_ind_labels, one_ind_question)
             
             # Get predicted question from model for current state
             probas = model.predict([onehot_state, mask])[0]  # Predict the one-hot label
@@ -277,7 +278,7 @@ if __name__=='__main__':
         if episode % 20==0:
             # Last state is not relevant for training, since no predicted next state (question)
             model_history = model.fit([one_hot_state_list, mask_list],
-                                      one_hot_labels,
+                                      one_ind_labels,
                                       epochs=FLAGS.n_epochs,
                                       batch_size=FLAGS.batch_size,
                                       validation_split=FLAGS.val_split,

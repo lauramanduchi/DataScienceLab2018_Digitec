@@ -141,9 +141,9 @@ def get_proba_Q_distribution(question_list, df_history, alpha):
             Q_proba: probability distribution of filters (questions)
     """
     n = len(question_list)
-    #Step 1: uniform distribution
+    # Step 1: uniform distribution
     Q_proba = np.ones(n)/n
-    #Step 2: taking into account history
+    # Step 2: taking into account history
     for i in range(n):
         q_id = str(int(question_list[i]))
         try:
@@ -171,7 +171,7 @@ def get_proba_A_distribution_none(question, products_cat, traffic_processed, alp
         print('Nothing to return there is no product left with this filter')
         return(distribution)
     
-    #step 1: probas is number of product per answer to the question (no history)
+    # step 1: probas is number of product per answer to the question (no history)
     products_cat = products_cat.loc[products_cat["PropertyDefinitionId"]==int(question), ]
     nb_prod_with_answer = len(np.unique(products_cat["ProductId"]))
     distribution["nb_prod"] = products_cat[['ProductId','answer']].groupby(['answer']).count()["ProductId"]
@@ -179,7 +179,7 @@ def get_proba_A_distribution_none(question, products_cat, traffic_processed, alp
     nb_prod_without_answer = number_products_total - nb_prod_with_answer
     distribution["catalog_proba"] = distribution["nb_prod"]/number_products_total
     
-    #step 2: add the history if available just for KNOWN answers
+    # step 2: add the history if available just for KNOWN answers
     distribution["history_proba"] = 0
     if (len(traffic_processed)>0):
         history_answered = []
@@ -218,7 +218,7 @@ if __name__ == "__main__":
     from utils.sampler import sample_answers
     import time 
 
-    #uploading tables
+    # Uploading tables
     try:
         products_cat = load_obj('../data/products_table')
         traffic_cat = load_obj('../data/traffic_table')
@@ -238,7 +238,7 @@ if __name__ == "__main__":
         save_obj(answer_text, '../data/answer_text')
         print("Created datasets")
 
-    #uploading history from traffic_cat
+    # Uploading history from traffic_cat
     try:
         df_history = load_obj('../data/df_history')
     except:
@@ -246,7 +246,7 @@ if __name__ == "__main__":
         save_obj(df_history, '../data/df_history')
         print("Created history")
 
-    #sample a product
+    # Sample a product
     y = products_cat["ProductId"][20]
     answers_y = sample_answers(y, products_cat)
     threshold = 50

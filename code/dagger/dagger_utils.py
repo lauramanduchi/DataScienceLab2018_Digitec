@@ -16,7 +16,17 @@ from utils.sampler import sample_answers
 from utils.algo_utils import get_proba_Y_distribution
 
 def get_products(state, product_set, traffic_set=[], purchased_set=[]):
-    """ from the state dict get the remaining products """
+    """ Update the data tables from the state dict
+    Args:
+        state: {question1:answer1, question2: answer2, ...}
+        product_set: product table [ProductId	BrandId	ProductTypeId	PropertyValue	PropertyDefinitionId	PropertyDefinitionOptionId	answer]
+        traffic_set: traffic table [SessionId	answers_selected	Items_ProductId]
+        purchased_set: purchased table [ProductId	UserId	OrderId	SessionId	Items_ProductId	Items_ItemCount]
+    Returns:
+        result_df: updated product table [ProductId	BrandId	ProductTypeId	PropertyValue	PropertyDefinitionId	PropertyDefinitionOptionId	answer]
+        traffic_set: updated traffic table [SessionId	answers_selected	Items_ProductId]
+        purchased_set: updates purchased table [ProductId	UserId	OrderId	SessionId	Items_ProductId	Items_ItemCount]
+    """
     result_df = product_set.copy()
     for q, a in state.items():
         result_df, traffic_set, purchased_set = algo_utils.select_subset(result_df, question = q, answer = a, traffic_set=traffic_set, purchased_set=purchased_set)
@@ -27,8 +37,13 @@ def get_next_question_opt(state, product_set, traffic_set, purchased_set, thresh
     """ Compute the true next question, according to entropy principle, given the history of previous questions and answers.
     Args:
         state: {question1:answer1, question2: answer2, ...}
+        product_set: product table [ProductId	BrandId	ProductTypeId	PropertyValue	PropertyDefinitionId	PropertyDefinitionOptionId	answer]
+        traffic_set: traffic table [SessionId	answers_selected	Items_ProductId]
+        purchased_set: purchased table [ProductId	UserId	OrderId	SessionId	Items_ProductId	Items_ItemCount]
+        threshold: max length of final set of products
     Returns:
-        next_question and boolean variable done
+        next_question: next optimal question to ask
+        done: boolean variable to indicate if reached the minimal set of remaining product
     """
     product_set, traffic_set, purchased_set = get_products(state, product_set,traffic_set, purchased_set)
     n = len(algo_utils.get_distinct_products(product_set))
@@ -36,7 +51,7 @@ def get_next_question_opt(state, product_set, traffic_set, purchased_set, thresh
     question_set_new = set(algo_utils.get_filters_remaining(product_set)) 
     question_set = question_set_new.difference(state.keys()) # state keys is the list of questions asked 
     if n < threshold :
-        done = True # the remain product_set is smaller than threshold
+        done = True  # the remain product_set is smaller than threshold
         next_question = 0
     else:
         done = False
@@ -44,12 +59,24 @@ def get_next_question_opt(state, product_set, traffic_set, purchased_set, thresh
     return next_question, done
 
 
-def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, a_hist, df_history, question_text_df, answer_text, threshold, size=200, p_idk=0.1, p_2a=0.1, p_3a=0.1):
+def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, a_hist, df_history, question_text_df, answer_text_df, threshold, size=200, p_idk=0.1, p_2a=0.1, p_3a=0.1):
     """ Compute the trajectory for all the products following the entropy principle, and divide them in states and actions.
     Args:
-        original product catalog, traffic table and purchased articles from the selected category.
+        product_set: product table [ProductId	BrandId	ProductTypeId	PropertyValue	PropertyDefinitionId	PropertyDefinitionOptionId	answer]
+        traffic_set: traffic table [SessionId	answers_selected	Items_ProductId]
+        purchased_set: purchased table [ProductId	UserId	OrderId	SessionId	Items_ProductId	Items_ItemCount]
+        a_hist (default = 0): parameter to determine the importance of history filters, the higher the more important history is. 0 means no history
+        df_history (default = 0): history table obtained with algo_utils.create_history(traffic_cat, question_text_df) [ProductId	text	frequency]
+        question_text_df: table to link questionId to text [PropertyDefinition	PropertyDefinitionId]
+        answer_text_df: table to link answerId to text [answer_id	question_id	answer_text]
+        threshold: max length of final set of products
+        size: number of trajectories to produce
+        p_idk (default 0.1): additional probability of answering "I dont know" to a given question
+        p_2a (default 0.3): probability of giving 2 answers to a given question (true answer and random other one)
+        p_3a (default 0.15): probability of giving 3 answers to a given question.
     Returns:
-        state_list (questions, answers made) and question_list (actions)
+        state_list: questions, answers made by MaxMI algorithm
+        question_list: action taken for each state
     """
     # Optimization: compute first_questions outside product loop
     first_questions = []
@@ -60,26 +87,29 @@ def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, a_hist, df_h
         first_question = opt_step(first_question_set, products_cat, traffic_cat, purchased_cat, a_hist, df_history)
         first_questions.append(first_question)
         first_question_set = first_question_set.difference(set(first_questions))
+
+    # Select a subset of size products from the y_distribution
     state_list = []
     all_questions_list = []
     p_y = get_proba_Y_distribution(products_cat, purchased_cat, alpha=1)["final_proba"].values
     y_array = np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = size, p = p_y)
-    
+
+    # For each product compute the trajectory following the MaxMI algorithm
     for y in y_array:
         answers_y = sample_answers(y, products_cat, p_idk, p_2a, p_3a) 
         question_list, _, _, _, _ = max_info_algorithm(products_cat, 
                                                         traffic_cat, 
                                                         purchased_cat,
                                                         question_text_df,
-                                                        answer_text,
+                                                        answer_text_df,
                                                         threshold, 
                                                         y, 
                                                         answers_y,
                                                         a_hist,
                                                         df_history,
                                                         first_questions)
-        # first state in state zero
-        history = {}
+        # Divide the entire trajectory in {state, action}
+        history = {}     # first state is state zero
         state_list.append(history)
         for q in question_list[: -1]:
             answers = answers_y.get(q)
@@ -91,17 +121,18 @@ def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, a_hist, df_h
 
 
 def get_onehot_state(state, filters_def_dict):
-    """ Compute the one-hot vector state from state.
+    """ Compute the one-hot vector state from state:
     Args:
         state: {"q1":[a1,a2], "q2":[a3], ..}
+        filters_def_dict:
     Returns:
-        one-hot vector state ([0,0,1,1,0,0,...,0,0])
+        onehot_state: one-hot vector state ([0,0,1,1,0,0,...,0,0])
     """
     questions = sorted(filters_def_dict.keys())
     onehot_state = []
     for q in questions:
-        #get all sorted possible answers
-        #some questions have an answer type object and other a normal array
+        # Get all sorted possible answers
+        # some questions have an answer type object and other a normal array
         if filters_def_dict[q].dtype == object:
             all_a = sorted(filters_def_dict[q].item())
         else:
@@ -121,13 +152,20 @@ def get_onehot_state(state, filters_def_dict):
             [onehot_state.append(0) for i in range(len(all_a))]
     return onehot_state
 
-def get_onehot_question(question_list, filters_def_dict):
+def get_index_question(question_list, filters_def_dict):
+    """ Compute a list of indices to represent the question asked at each time:
+    Args:
+         question_list: questions considered
+         filters_def_dict: dict where key is questionId, value is array of all possible (modified) answers
+    Returns:
+        all_one_hot: list of indices indicating the question asked at each time
+    """
     questions_sorted=np.asarray(sorted(filters_def_dict.keys()))
-    all_one_hot = []
+    all_indices = []
     for q in question_list:
         i = np.where(questions_sorted==str(q))[0][0]
-        all_one_hot.append(i)
-    return np.asarray(all_one_hot)
+        all_indices.append(i)
+    return np.asarray(all_indices)
 
 
 # taken from https://www.tensorflow.org/tutorials/keras/overfit_and_underfit

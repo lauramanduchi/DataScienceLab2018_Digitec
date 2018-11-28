@@ -19,10 +19,11 @@ from utils.sampler import sample_answers
 
 # To remove future warning from being printed out
 warnings.simplefilter(action='ignore', category=FutureWarning)
-# about parmap 
-#y = [myfunction(x, argument1, mykeyword=argument2) for x in mylist]
+
+# About parmap
+# y = [myfunction(x, argument1, mykeyword=argument2) for x in mylist]
 # In parallel:
-#y = parmap.map(myfunction, mylist, argument1, mykeyword=argument2)
+# y = parmap.map(myfunction, mylist, argument1, mykeyword=argument2)
 
 
 def conditional_entropy(answer, question, product_set, traffic_set, purchased_set):
@@ -96,7 +97,7 @@ def opt_step(question_set, product_set, traffic_set, purchased_set, a_hist = 0, 
                                         pm_processes = multiprocessing.cpu_count()))
     MI_matrix[:,0] = list(question_set)
 
-    #Prior on filters already been used by users (more user-friendly)
+    # Prior on filters already been used by users (more user-friendly)
     if a_hist > 0:
         Q_distr = algo_utils.get_proba_Q_distribution(list(question_set), df_history, a_hist)
         MI_matrix[:, 1] = np.multiply(mutual_array, Q_distr)
@@ -144,7 +145,7 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, \
     print("There are {} possible products to choose from".format(len(distinct_products)))
     iter = 1
 
-    #Compute the first 3 optimized questions for IDK answers (speed-up)
+    # Compute the first 3 optimized questions for IDK answers (speed-up)
     if first_questions is None:
         first_questions = []
         first_question_set = question_set
@@ -155,7 +156,7 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, \
             first_questions.append(first_question)
             first_question_set = first_question_set.difference(set(first_questions))
 
-    #Given we have the first 3 best questions for IDK answer we can use them until we receive a different answer
+    # Given we have the first 3 best questions for IDK answer we can use them until we receive a different answer
     n_first_q = len(first_questions)
     idk = True
     i = 0
@@ -182,7 +183,7 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, \
         print("There are {} possible products to choose from".format(distinct_products))
         iter+=1
 
-    #Perform greedy step until the subset of products is smaller than a certain threshold
+    # Perform greedy step until the subset of products is smaller than a certain threshold
     while not (distinct_products < threshold or len(question_set) == 0):
         next_question = opt_step(question_set, product_set, traffic_set, purchased_set, a_hist, df_history)
         print("Next question is filter : {}".format(next_question))
@@ -207,7 +208,7 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, \
 
 if __name__=='__main__':
 
-    #upload all the data tables
+    # Upload all the data tables
     try:
         products_cat = load_obj('../data/products_table')
         traffic_cat = load_obj('../data/traffic_table')
@@ -215,7 +216,7 @@ if __name__=='__main__':
         question_text_df = load_obj('../data/question_text_df')
         answer_text_df = load_obj('../data/answer_text')
         print("Loaded datsets")
-    #download all the data tables
+    # Download all the data tables
     except:
         print("Creating datasets...")
         products_cat, traffic_cat, purchased_cat, filters_def_dict, type_filters, question_text_df, answer_text = init_df()
@@ -228,22 +229,22 @@ if __name__=='__main__':
         save_obj(answer_text, '../data/answer_text')
         print("Created datasets")
 
-    #upload history from traffic_cat
+    # Upload history of filters used from traffic_cat
     try:
         df_history = load_obj('../data/df_history')
-    #download history from traffic_cat
+    # Download history from traffic_cat
     except:
         df_history = algo_utils.create_history(traffic_cat, question_text_df)
         save_obj(df_history, '../data/df_history')
         print("Created history")
 
-    #select a product
+    # Select a product
     y = products_cat["ProductId"][10]
     answers_y = sample_answers(y, products_cat)
     threshold = 50
     start_time = time.time()
     print("Start time: {}".format(start_time))
-    #algorithm
+    # algorithm
     final_question_list, product_set, y, final_question_text_list, answer_text_list = max_info_algorithm(products_cat, \
                                                                                                          traffic_cat, \
                                                                                                          purchased_cat, \
