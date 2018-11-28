@@ -182,9 +182,9 @@ if __name__=='__main__':
                               one_ind_labels,
                               epochs=FLAGS.n_epochs,
                               batch_size=FLAGS.batch_size,
-                              validation_split=FLAGS.val_split,  # or validation_data=(val_state, val_labels) #TODO check
+                              validation_split=FLAGS.val_split, 
                               verbose=2,
-                              callbacks=[cp_callback]) #TODO Check what this is for
+                              callbacks=[cp_callback])
 
     # Print first training plots
     dagger_utils.plot_history(model_history, key='loss')
