@@ -163,7 +163,7 @@ def get_index_question(question_list, filters_def_dict):
     questions_sorted=np.asarray(sorted(filters_def_dict.keys()))
     all_indices = []
     for q in question_list:
-        i = np.where(questions_sorted==str(q))[0][0]
+        i = np.where(questions_sorted==str(float(q)))[0][0]
         all_indices.append(i)
     return np.asarray(all_indices)
 
