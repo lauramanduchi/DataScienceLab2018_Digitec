@@ -269,6 +269,7 @@ if __name__=='__main__':
             q_pred = sorted(filters_def_dict.keys())[onehot_prediction]  # Get the number of predicted next question
             
             # Update (answer) state according to that prediction
+            # TODO algo fails here
             answers_to_pred = answers_y.get(float(q_pred))  # Get answer (from randomly sample product) to chosen question
             state[q_pred] = list(answers_to_pred)
             print(state)
