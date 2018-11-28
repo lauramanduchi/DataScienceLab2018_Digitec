@@ -55,6 +55,13 @@ tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on 
 
 FLAGS = tf.flags.FLAGS
 
+"""Printing model configuration to command line"""
+
+print("\nParameters:")
+for attr, value in sorted(FLAGS.__flags.items()):
+    print("{}={}".format(attr.upper(), value.value))
+print("")
+
 
 if __name__=='__main__':
 
