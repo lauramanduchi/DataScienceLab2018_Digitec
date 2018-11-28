@@ -1,3 +1,8 @@
+import sys
+import os.path
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
 from utils.load_utils import load_obj
 import tensorlayer as tl
 import numpy as np
