@@ -260,14 +260,16 @@ if __name__=='__main__':
                     one_ind_question = dagger_utils.get_index_question([q_true], filters_def_dict)[0]
                     one_ind_labels = np.append(one_ind_labels, one_ind_question)
             
+            onehot_state = np.reshape(onehot_state, (1, -1))
+            mask = np.reshape(mask, (1, -1))
             # Get predicted question from model for current state
-            probas = model.predict([onehot_state, mask])[0]  # Predict the one-hot label
+            probas = model.predict({'main_input': onehot_state, 'mask_input': mask})[0]  # Predict the one-hot label
             print(probas)
             onehot_prediction = np.argmax(probas)
             q_pred = sorted(filters_def_dict.keys())[onehot_prediction]  # Get the number of predicted next question
             
             # Update (answer) state according to that prediction
-            answers_to_pred = answers_y.get(int(q_pred))  # Get answer (from randomly sample product) to chosen question
+            answers_to_pred = answers_y.get(float(q_pred))  # Get answer (from randomly sample product) to chosen question
             state[q_pred] = list(answers_to_pred)
             print(state)
 
