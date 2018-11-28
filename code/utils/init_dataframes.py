@@ -5,6 +5,11 @@
 This file is used to extract data from the Digitec database and to preprocess it.
 It saves the needed dataframes.
 """
+import sys
+import os.path
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
 
 from sqlalchemy import create_engine,text
 import pandas as pd
@@ -126,9 +131,9 @@ def init_df():
     i = 0
     brandId = 99999
     for p in products_cat["ProductId"].drop_duplicates():
-        brand = products_cat.loc[products_cat['ProductId'] == p]["BrandId"].drop_duplicates()
+        brand = products_cat.loc[products_cat['ProductId'] == p, "BrandId"].drop_duplicates()
         brand = brand.values[0]
-        producttype_id = products_cat.loc[products_cat['ProductId'] == p]["ProductTypeId"].drop_duplicates().values[0]
+        producttype_id = products_cat.loc[products_cat['ProductId'] == p, "ProductTypeId"].drop_duplicates().values[0]
         newrow = pd.Series([p, brand, producttype_id, brandId, brand],
                            index=["ProductId", "BrandId", "ProductTypeId", "PropertyDefinitionId",
                                   "PropertyDefinitionOptionId"],
