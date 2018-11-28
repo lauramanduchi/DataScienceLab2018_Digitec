@@ -39,13 +39,14 @@ The results file can be found in the runs/cp.ckpt folder.
 # Data loading parameters
 tf.flags.DEFINE_string("run_name", None, "Run name to save (default: none)")
 tf.flags.DEFINE_integer("threshold", 50, "Length of the final subset of products (default: 50")
-tf.flags.DEFINE_integer("in_maxMI_size", 200, "Initial number of products to run maxMI algorithm on (default:200)")
+tf.flags.DEFINE_integer("in_maxMI_size", 1000, "Initial number of products to run maxMI algorithm on (default:1000)")
 
 # Test parameters
 tf.flags.DEFINE_integer("batch_size", 32, "Batch Size (default: 32)")
 tf.flags.DEFINE_float("val_split", 0.1, "Fraction used for validation during training (default: 0.1)")
-tf.flags.DEFINE_integer("n_epochs", 20, "Number of epochs (default: 20)")
-tf.flags.DEFINE_integer("n_episodes", 500, "Number of episodes (default: 500)")
+tf.flags.DEFINE_integer("n_epochs", 100, "Number of epochs during secondary training")
+tf.flags.DEFINE_integer("n_epochs_init", 1000, "Number of init epochs (default: 1000)")
+tf.flags.DEFINE_integer("n_episodes", 3000, "Number of episodes (default: 500)")
 #tf.flags.DEFINE_integer("checkpoint_every", 100, "checkpoint every")
 
 # Tensorflow Parameters
@@ -180,7 +181,7 @@ if __name__=='__main__':
     # Fit the model
     model_history = model.fit([one_hot_state_list, mask_list],
                               one_ind_labels,
-                              epochs=FLAGS.n_epochs,
+                              epochs=FLAGS.n_epochs_init,
                               batch_size=FLAGS.batch_size,
                               validation_split=FLAGS.val_split, 
                               verbose=2,
@@ -274,8 +275,8 @@ if __name__=='__main__':
         output_file.write('Episode: %02d\t Number or questions: %02d\n' % (episode, len(state)))
         
         # Retrain the model with the new data at the end of the episode
-        # For speed, only retrain every 20 episodes
-        if episode % 20==0:
+        # For speed, only retrain every 50 episodes
+        if episode % 50==0:
             # Last state is not relevant for training, since no predicted next state (question)
             model_history = model.fit([one_hot_state_list, mask_list],
                                       one_ind_labels,
