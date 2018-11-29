@@ -29,6 +29,7 @@ def get_products(state, product_set, traffic_set=[], purchased_set=[]):
     """
     result_df = product_set.copy()
     for q, a in state.items():
+        print(q)
         result_df, traffic_set, purchased_set = algo_utils.select_subset(result_df, question = q, answer = a, traffic_set=traffic_set, purchased_set=purchased_set)
     return result_df, traffic_set, purchased_set
 
@@ -46,7 +47,7 @@ def get_next_question_opt(state, product_set, traffic_set, purchased_set, thresh
         done: boolean variable to indicate if reached the minimal set of remaining product
     """
     product_set, traffic_set, purchased_set = get_products(state, product_set,traffic_set, purchased_set)
-    n = len(algo_utils.get_distinct_products(product_set))
+    n = len(np.unique(product_set["ProductId"]))
     print('remaining prod {}'.format(n))
     question_set_new = set(algo_utils.get_filters_remaining(product_set)) 
     question_set = question_set_new.difference(state.keys()) # state keys is the list of questions asked 

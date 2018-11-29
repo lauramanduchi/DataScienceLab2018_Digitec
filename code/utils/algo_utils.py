@@ -53,7 +53,7 @@ def select_subset(product_set, traffic_set = [], question = None, answer = None,
         return(product_set, traffic_set, [])
     else:
         answer = [str(x) for x in answer]
-        tmp = product_set.loc[(product_set["PropertyDefinitionId"]==int(question)) & (product_set["answer"].astype(str).isin(answer)), ]
+        tmp = product_set.loc[(product_set["PropertyDefinitionId"]==int(float(question))) & (product_set["answer"].astype(str).isin(answer)), ]
         products_to_keep = np.unique(tmp["ProductId"])
         product_set = product_set.loc[product_set["ProductId"].isin(products_to_keep),]
         if len(traffic_set) != 0:
