@@ -29,7 +29,6 @@ def get_products(state, product_set, traffic_set=[], purchased_set=[]):
     """
     result_df = product_set.copy()
     for q, a in state.items():
-        print(q)
         result_df, traffic_set, purchased_set = algo_utils.select_subset(result_df, question = q, answer = a, traffic_set=traffic_set, purchased_set=purchased_set)
     return result_df, traffic_set, purchased_set
 
