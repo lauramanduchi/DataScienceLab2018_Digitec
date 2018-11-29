@@ -5,8 +5,18 @@ as fast as possible, by choosing the best sequence of questions/filters to ask.
 
 The different steps of our project are describes here. Details on how to access the data from the virtual machine are explained further down.
 
+The prototype has been developped for 
+
 ## Data extraction preprocessing ('utils' subfolder)
 The main script to get the necessary data for our algorithms is `init_dataframes.py`. This script can only be run on Digitec's machine as it assumes a connection to the Digitec database.
+
+The script takes care of the following steps:
+    *Data extraction
+    *Data preprocessing
+    *Output files
+
+#### Summary of the dataframes available for this project. 
+
 
 ## Stage 1 - Greedy algorithm - Max Mutual Information Algorithm ('greedy' subfolder)
 Max_MI algorithm: Greedy algorith that selects the next question/filter by maximizing the varying component of the mutual entropy.
