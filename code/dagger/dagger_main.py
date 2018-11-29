@@ -119,6 +119,9 @@ if __name__=='__main__':
                                                                        FLAGS.threshold,
                                                                        FLAGS.in_maxMI_size)
         # Save data as _tmp.npy file (to be reused in next iteration)
+        if not os.path.exists(os.path.join(os.path.curdir, "../runs_dagger/")):
+            os.makedirs(os.path.join(os.path.curdir, "../runs_dagger/"))
+        print("Saving dagger to {}\n".format(os.path.join(os.path.curdir, "../runs_dagger/")))
         tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list}, name='_tmp.npy')
         print('Saved teacher data')
 
@@ -220,7 +223,6 @@ if __name__=='__main__':
 
     # plt.show()  # If show the plot, must manually close the window to resume the execution of the program
     print(model_history.history.keys())
-
 
     # ============= COLLECT MORE DATA (EXPLORING NEW STATES) & RETRAIN NETWORK AT EACH EPISODE ========== #
     output_file = open(checkpoint_dir+'/results/results.txt', 'w')
