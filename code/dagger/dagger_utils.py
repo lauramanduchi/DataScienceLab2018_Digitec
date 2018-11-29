@@ -110,11 +110,11 @@ def get_data_from_teacher(products_cat, traffic_cat, purchased_cat, a_hist, df_h
                                                         first_questions)
         # Divide the entire trajectory in {state, action}
         history = {}     # first state is state zero
-        state_list.append(history)
+        state_list.append(history.copy())
         for q in question_list[: -1]:
             answers = answers_y.get(q)
             history[q] = answers
-            state_list.append(history)
+            state_list.append(history.copy())
             all_questions_list.append(q)
         all_questions_list.append(question_list[-1])
     return state_list, all_questions_list
