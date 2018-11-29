@@ -246,7 +246,7 @@ def hist_to_new(filtername, filters_def_dict, type_filters, min_value=None, max_
     Returns:
         the new answer
     """
-    filtername = str(filtername)
+    filtername = str(float(filtername))
     try:
         if max_value==None:
             if (type_filters[filtername]=="value" or type_filters[filtername]=="mixed"):
