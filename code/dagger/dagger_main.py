@@ -31,7 +31,6 @@ This module runs DAgger Algorithm
 
 The results file can be found in the runs/cp.ckpt folder. 
 """
-#TODO Check folder
 
 
 # ============= PARAMETERS ========== #
@@ -44,8 +43,8 @@ tf.flags.DEFINE_integer("in_maxMI_size", 1000, "Initial number of products to ru
 # Test parameters
 tf.flags.DEFINE_integer("batch_size", 32, "Batch Size (default: 32)")
 tf.flags.DEFINE_float("val_split", 0.1, "Fraction used for validation during training (default: 0.1)")
-tf.flags.DEFINE_integer("n_epochs", 100, "Number of epochs during secondary training")
-tf.flags.DEFINE_integer("n_epochs_init", 1000, "Number of init epochs (default: 1000)")
+tf.flags.DEFINE_integer("n_epochs", 50, "Number of epochs during secondary training")
+tf.flags.DEFINE_integer("n_epochs_init", 100, "Number of init epochs (default: 1000)")
 tf.flags.DEFINE_integer("n_episodes", 3000, "Number of episodes (default: 500)")
 #tf.flags.DEFINE_integer("checkpoint_every", 100, "checkpoint every")
 
@@ -194,11 +193,31 @@ if __name__=='__main__':
                               verbose=2,
                               callbacks=[cp_callback])
 
-    # Print first training plots
-    dagger_utils.plot_history(model_history, key='loss')
+    # For the plots
+    model_history_train_loss = model_history.history['loss']
+    model_history_val_loss = model_history.history['val_loss']
+    model_history_train_acc = model_history.history['acc']
+    model_history_val_acc = model_history.history['val_acc']
+    model_history_epochs = model_history.epoch
+
+    plt.figure(figsize=(16,10))
+    val = plt.plot(model_history_epochs, model_history_val_loss,'--', label='Validation set'.title())
+    plt.plot(model_history_epochs, model_history_train_loss, color=val[0].get_color(), label='Training set'.title())
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss'.title())
+    plt.legend()
+    plt.xlim([0,max(model_history_epochs)])
     plt.savefig(checkpoint_dir+'/results/'+"loss-Init.png", dpi=900)
-    dagger_utils.plot_history(model_history, key='acc')
+
+    plt.figure(figsize=(16,10))
+    val = plt.plot(model_history_epochs, model_history_val_acc,'--', label='Validation set'.title())
+    plt.plot(model_history_epochs, model_history_train_acc, color=val[0].get_color(), label='Training set'.title())
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy'.title())
+    plt.legend()
+    plt.xlim([0,max(model_history_epochs)])
     plt.savefig(checkpoint_dir+'/results/'+"acc-Init.png", dpi=900)
+
     # plt.show()  # If show the plot, must manually close the window to resume the execution of the program
     print(model_history.history.keys())
 
@@ -246,7 +265,7 @@ if __name__=='__main__':
             onehot_state = dagger_utils.get_onehot_state(state, filters_def_dict)
 
             # If not first question, add current mask and state to train data
-            # We do not save the first question because it is always the same (for optimal with no history into account) #TODO Modify if take history into account
+            # We do not save the first question because it is always the same (for optimal with no history into account) 
             if not state == {}:
                 # Get the question that the teacher would have asked given current state
                 q_true, done = dagger_utils.get_next_question_opt(state,
@@ -276,7 +295,6 @@ if __name__=='__main__':
             q_pred = sorted(filters_def_dict.keys())[onehot_prediction]  # Get the number of predicted next question
             
             # Update (answer) state according to that prediction
-            # TODO algo fails here
             answers_to_pred = answers_y.get(float(q_pred))  # Get answer (from randomly sample product) to chosen question
             state[q_pred] = list(answers_to_pred)
             print(state)
@@ -285,8 +303,8 @@ if __name__=='__main__':
         output_file.write('Episode: %02d\t Number or questions: %02d\n' % (episode, len(state)))
         
         # Retrain the model with the new data at the end of the episode
-        # For speed, only retrain every 50 episodes
-        if episode % 50==0:
+        # Only retrain every 500 episodes
+        if episode % 500==0:
             # Last state is not relevant for training, since no predicted next state (question)
             model_history = model.fit([one_hot_state_list, mask_list],
                                       one_ind_labels,
@@ -294,11 +312,35 @@ if __name__=='__main__':
                                       batch_size=FLAGS.batch_size,
                                       validation_split=FLAGS.val_split,
                                       verbose=2,
-                                      callbacks=[cp_callback])  # For now it is overwriting the preceding checkpoint #TODO Modify
+                                      callbacks=[cp_callback])
         
+            model_history_epochs = np.append(model_history_epochs, model_history.epoch)
+            model_history_train_loss = np.append(model_history_train_loss, model_history.history['loss'])
+            model_history_val_loss = np.append(model_history_val_loss, model_history.history['val_loss'])
+            model_history_train_acc = np.append(model_history_train_acc, model_history.history['acc'])
+            model_history_val_acc = np.append(model_history_val_acc, model_history.history['val_acc'])
+
+            plt.figure(figsize=(16,10))
+            val = plt.plot(model_history_epochs, model_history_val_loss,'--', label='Validation set'.title())
+            plt.plot(model_history_epochs, model_history_train_loss, color=val[0].get_color(), label='Training set'.title())
+            plt.xlabel('Epochs')
+            plt.ylabel('Loss'.title())
+            plt.legend()
+            plt.xlim([0,max(model_history_epochs)])
+            plt.savefig(checkpoint_dir+'/results/'+"loss-E{}.png".format(episode), dpi=900)
+
+            plt.figure(figsize=(16,10))
+            val = plt.plot(model_history_epochs, model_history_val_acc,'--', label='Validation set'.title())
+            plt.plot(model_history_epochs, model_history_train_acc, color=val[0].get_color(), label='Validation set'.title())
+            plt.xlabel('Epochs')
+            plt.ylabel('Accuracy'.title())
+            plt.legend()
+            plt.xlim([0,max(model_history_epochs)])
+            plt.savefig(checkpoint_dir+'/results/'+"acc-E{}.png".format(episode), dpi=900)
+            """
             # Plot loss and accuracy
             dagger_utils.plot_history(model_history, key='loss')
             plt.savefig(checkpoint_dir+'/results/'+"loss-E{}.png".format(episode), dpi=900)
             dagger_utils.plot_history(model_history, key='acc')
             plt.savefig(checkpoint_dir+'/results/'+"acc-E{}.png".format(episode), dpi=900)
-
+            """
