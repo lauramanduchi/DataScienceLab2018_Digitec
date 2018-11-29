@@ -222,7 +222,6 @@ if __name__=="__main__":
     p_idk = args.pidk if args.pidk else 0.0
     p_2a = args.p2a if args.p2a else 0.0
     p_3a = args.p3a if args.p3a else 0.0
-    """
     state_list, question_list = get_data_from_teacher(products_cat,
                                                     traffic_cat, 
                                                     purchased_cat, 
@@ -231,7 +230,7 @@ if __name__=="__main__":
                                                     question_text_df,
                                                     answer_text,
                                                     threshold,
-                                                    size)"""
+                                                    size)
     if not os.path.exists(os.path.join(os.path.curdir, "../runs_dagger/")):
             os.makedirs(os.path.join(os.path.curdir, "../runs_dagger/"))
     print("Saving dagger to {}\n".format(os.path.join(os.path.curdir, "../runs_dagger/")))
