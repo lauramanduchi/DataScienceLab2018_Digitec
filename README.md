@@ -32,24 +32,24 @@ The script takes care of the following steps:
       - In the continuous case (answer is stored in PropertyValue) sometimes there are too many values to propose to the user. We created a new answer in this case: based on the 10th quantile we restricted the set of possible answers to 10 bins. Example for height. 
 - Output files
 The output dataframe that are used throughout the project are saved in the `data` subfolder. 
-        - products_cat: extract of product catalog for category 6
-        - purchased_cat: purchases from products of category 6.
+  - products_cat: extract of product catalog for category 6
+  - purchased_cat: purchases from products of category 6.
     only keep purchases where one unique productId was bought.
-        - traffic_cat: table containing the filters used for purchases in purchased_cat.
-        - filters_def_dict: dict where key is questionId
+  - traffic_cat: table containing the filters used for purchases in purchased_cat.
+  - filters_def_dict: dict where key is questionId
     value is array of all possible (modified) answers
-        - type_filters: dict {str(float(questionId)): 'mixed'|'bin'|'value'|'option'}
+  - type_filters: dict {str(float(questionId)): 'mixed'|'bin'|'value'|'option'}
     question_text_df: dataframe with columns PropertyDefinitionId
     and PropertyDefinition (string of question)
-        - answer_text: dataframe with columns question_id, answer_id and answer_text.
+  - answer_text: dataframe with columns question_id, answer_id and answer_text.
 #### Summary of the dataframes available for this project. 
 | Dataframe filename  | Alias commonly used throughout the code |Columns available |
 | ------------- | ------------- | ------------- |
 | products_table  | products_cat | ProductId, BrandId, ProductTypeId, PropertyValue, PropertyDefinitionId, PropertyDefinitionOptionId, answer  |
 | traffic_table  | traffic_cat | SessionId, answers_selected, Items_ProductId  |
 | purchased_table | purchased_cat | ProductId, UserId, OrderId, SessionId, Items_ProductId, Items_ItemCount  |
-| question_text_df  |  PropertyDefinition, PropertyDefinitionId  |
-| answer_text | answer_id, question_id , answer_text |
+| question_text_df  | | PropertyDefinition, PropertyDefinitionId  |
+| answer_text | | answer_id, question_id , answer_text |
 
 ## Stage 1 - Greedy algorithm - Max Mutual Information Algorithm ('greedy' subfolder)
 Max_MI algorithm: Greedy algorith that selects the next question/filter by maximizing the varying component of the mutual entropy.
