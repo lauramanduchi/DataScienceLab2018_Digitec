@@ -139,7 +139,6 @@ def get_onehot_state(state, filters_def_dict):
         else:
             all_a = sorted(filters_def_dict[str(float(q))])
         # if q has been answered in state
-        print(all_a)
         if q in state.keys():
             a = state[q]  #get answers from that question
             if not isinstance(a,list):
