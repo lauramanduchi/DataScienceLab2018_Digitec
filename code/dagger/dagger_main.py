@@ -100,8 +100,8 @@ if __name__=='__main__':
     print('Collecting data from teacher (MaxMI algorithm)... \n')
 
     try:
-        #data = tl.files.load_npy_to_any(name='../teacher_dagger/_tmp.npy')
-        data = tl.files.load_npy_to_any(name='../teacher_dagger/s500_p2a0.2_p3a0.1_pidk0.1_a1.0_tmp.npy')
+        data = tl.files.load_npy_to_any(name='../teacher_dagger/_tmp.npy')
+        #data = tl.files.load_npy_to_any(name='../teacher_dagger/s500_p2a0.2_p3a0.1_pidk0.1_a1.0_tmp.npy')
         state_list = data['state_list']
         question_list = data['act']
         print('Data found and loaded')
