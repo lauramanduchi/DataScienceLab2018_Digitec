@@ -231,7 +231,7 @@ if __name__=="__main__":
                                                     answer_text,
                                                     threshold,
                                                     size)
-    if not os.path.exists(os.path.join(os.path.curdir, "../runs_dagger/")):
-            os.makedirs(os.path.join(os.path.curdir, "../runs_dagger/"))
-    print("Saving dagger to {}\n".format(os.path.join(os.path.curdir, "../runs_dagger/")))
-    tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list}, name = '../runs_dagger/s{}_p2a{}_p3a{}_pidk{}_a{}_tmp.npy'.format(size, p_2a, p_3a, p_idk, a_hist))
+    if not os.path.exists(os.path.join(os.path.curdir, "../teacher_dagger/")):
+            os.makedirs(os.path.join(os.path.curdir, "../teacher_dagger/"))
+    print("Saving dagger to {}\n".format(os.path.join(os.path.curdir, "../teacher_dagger/")))
+    tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list}, name = '../teacher_dagger/s{}_p2a{}_p3a{}_pidk{}_a{}_tmp.npy'.format(size, p_2a, p_3a, p_idk, a_hist))
