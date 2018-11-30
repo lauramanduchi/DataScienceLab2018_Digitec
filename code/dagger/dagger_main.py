@@ -237,7 +237,7 @@ if __name__=='__main__':
         latest = out_dir+'/cp.ckpt' 
         
         # Restore the model from the checkpoint
-        model = create_model(number_filters, length_state)
+        model = create_model(number_filters, length_state, h1=FLAGS.h1, h2=FLAGS.h2)
         model.load_weights(latest)
         
         # Start the imitation learning
