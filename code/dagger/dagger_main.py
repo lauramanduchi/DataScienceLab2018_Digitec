@@ -210,7 +210,7 @@ if __name__=='__main__':
     plt.ylabel('Loss'.title())
     plt.legend()
     plt.xlim([0,max(model_history_epochs)])
-    plt.savefig(checkpoint_dir+"/loss-Init.png", dpi=900)
+    plt.savefig(checkpoint_dir+"/loss-Init.png", dpi=300)
 
     plt.figure(figsize=(16,10))
     val = plt.plot(model_history_epochs, model_history_val_acc,'--', label='Validation set'.title())
@@ -219,7 +219,7 @@ if __name__=='__main__':
     plt.ylabel('Accuracy'.title())
     plt.legend()
     plt.xlim([0,max(model_history_epochs)])
-    plt.savefig(checkpoint_dir+"/acc-Init.png", dpi=900)
+    plt.savefig(checkpoint_dir+"/acc-Init.png", dpi=300)
 
     # plt.show()  # If show the plot, must manually close the window to resume the execution of the program
     print(model_history.history.keys())
@@ -329,7 +329,7 @@ if __name__=='__main__':
             plt.ylabel('Loss'.title())
             plt.legend()
             plt.xlim([0,max(model_history_epochs)])
-            plt.savefig(checkpoint_dir+"/loss-E{}.png".format(episode), dpi=900)
+            plt.savefig(checkpoint_dir+"/loss-E{}.png".format(episode), dpi=300)
 
             plt.clf()
             plt.figure(figsize=(16,10))
@@ -339,7 +339,7 @@ if __name__=='__main__':
             plt.ylabel('Accuracy'.title())
             plt.legend()
             plt.xlim([0,max(model_history_epochs)])
-            plt.savefig(checkpoint_dir+"/acc-E{}.png".format(episode), dpi=900)
+            plt.savefig(checkpoint_dir+"/acc-E{}.png".format(episode), dpi=300)
             """
             # Plot loss and accuracy
             dagger_utils.plot_history(model_history, key='loss')
