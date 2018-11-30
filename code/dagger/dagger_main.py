@@ -46,6 +46,8 @@ tf.flags.DEFINE_float("val_split", 0.1, "Fraction used for validation during tra
 tf.flags.DEFINE_integer("n_epochs", 50, "Number of epochs during secondary training")
 tf.flags.DEFINE_integer("n_epochs_init", 100, "Number of init epochs (default: 1000)")
 tf.flags.DEFINE_integer("n_episodes", 3000, "Number of episodes (default: 500)")
+tf.flags.DEFINE_integer("h1", 256, "Number of hidden units (default: 256)")
+tf.flags.DEFINE_integer("h2", 128, "Number of hidden units layer 2 (default: 128)")
 #tf.flags.DEFINE_integer("checkpoint_every", 100, "checkpoint every")
 
 # Tensorflow Parameters
@@ -98,7 +100,8 @@ if __name__=='__main__':
     print('Collecting data from teacher (MaxMI algorithm)... \n')
 
     try:
-        data = tl.files.load_npy_to_any(name='runs_dagger/_tmp.npy')
+        #data = tl.files.load_npy_to_any(name='../teacher_dagger/_tmp.npy')
+        data = tl.files.load_npy_to_any(name='../teacher_dagger/s500_p2a0.2_p3a0.1_pidk0.1_a1.0_tmp.npy')
         state_list = data['state_list']
         question_list = data['act']
         print('Data found and loaded')
@@ -119,12 +122,11 @@ if __name__=='__main__':
                                                                        FLAGS.threshold,
                                                                        FLAGS.in_maxMI_size)
         # Save data as _tmp.npy file (to be reused in next iteration)
-        if not os.path.exists(os.path.join(os.path.curdir, "../runs_dagger/")):
-            os.makedirs(os.path.join(os.path.curdir, "../runs_dagger/"))
-        print("Saving dagger to {}\n".format(os.path.join(os.path.curdir, "../runs_dagger/")))
+        if not os.path.exists(os.path.join(os.path.curdir, "../teacher_dagger/")):
+            os.makedirs(os.path.join(os.path.curdir, "../teacher_dagger/"))
+        print("Saving dagger to {}\n".format(os.path.join(os.path.curdir, "../teacher_dagger/")))
         tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list}, name='_tmp.npy')
         print('Saved teacher data')
-
 
     # ============= SETTING UP CHECKPOINT DIRECTORY ========== #
     # Set up output directory for models and summaries
@@ -145,7 +147,7 @@ if __name__=='__main__':
     cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_path, 
                                                      save_weights_only=True,
                                                      verbose=1,
-                                                     period=10)
+                                                     period=1000)
 
 
     # ============= TRAINING WITH INITIAL TEACHER DATA ========== #
@@ -174,7 +176,6 @@ if __name__=='__main__':
     # Convert to array
     one_hot_state_list = np.asarray(onehot_state_list)
     mask_list = np.asarray(mask_list)
-    
     length_state = np.size(onehot_state_list[0])
     
     print('Length of the one-hot state vector is {}'.format(length_state))
@@ -182,7 +183,7 @@ if __name__=='__main__':
     
     # Model definition
     print('Init model')
-    model = create_model(number_filters, length_state)
+    model = create_model(number_filters, length_state, h1 = FLAGS.h1, h2=FLAGS.h2)
     
     # Print summary of parameters
     model.summary()
