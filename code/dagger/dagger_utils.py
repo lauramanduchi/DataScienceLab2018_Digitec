@@ -151,7 +151,6 @@ def get_onehot_state(state, filters_def_dict):
         # if q has NOT been answered in state
         else:
             [onehot_state.append(0) for i in range(len(all_a))]
-        print(sum(onehot_state))
     return onehot_state
 
 def get_index_question(question_list, filters_def_dict):
