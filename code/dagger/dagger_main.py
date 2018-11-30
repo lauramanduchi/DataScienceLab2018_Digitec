@@ -321,6 +321,7 @@ if __name__=='__main__':
             model_history_train_acc = np.append(model_history_train_acc, model_history.history['acc'])
             model_history_val_acc = np.append(model_history_val_acc, model_history.history['val_acc'])
 
+            plt.clf()
             plt.figure(figsize=(16,10))
             val = plt.plot(model_history_epochs, model_history_val_loss,'--', label='Validation set'.title())
             plt.plot(model_history_epochs, model_history_train_loss, color=val[0].get_color(), label='Training set'.title())
@@ -330,6 +331,7 @@ if __name__=='__main__':
             plt.xlim([0,max(model_history_epochs)])
             plt.savefig(checkpoint_dir+"/loss-E{}.png".format(episode), dpi=900)
 
+            plt.clf()
             plt.figure(figsize=(16,10))
             val = plt.plot(model_history_epochs, model_history_val_acc,'--', label='Validation set'.title())
             plt.plot(model_history_epochs, model_history_train_acc, color=val[0].get_color(), label='Validation set'.title())
