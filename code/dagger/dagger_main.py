@@ -146,7 +146,7 @@ if __name__=='__main__':
     cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_path, 
                                                      save_weights_only=True,
                                                      verbose=1,
-                                                     period=1000)
+                                                     period=50)
 
 
     # ============= TRAINING WITH INITIAL TEACHER DATA ========== #
