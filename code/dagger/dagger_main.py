@@ -131,10 +131,10 @@ if __name__=='__main__':
     # ============= SETTING UP CHECKPOINT DIRECTORY ========== #
     # Set up output directory for models and summaries
     if FLAGS.run_name is None:
-            timestamp = str(int(time.time()))
-            out_dir = os.path.abspath(os.path.join(os.path.curdir, "../runs/h1{}_h2{}_ts{}".format(FLAGS.h1, FLAGS.h2,timestamp))
+        timestamp = str(int(time.time()))
+        out_dir = os.path.abspath(os.path.join(os.path.curdir, "../runs/h1{}_h2{}_ts{}".format(FLAGS.h1, FLAGS.h2,timestamp)))
     else:
-            out_dir = os.path.abspath(os.path.join(os.path.curdir, "../runs", FLAGS.run_name))
+        out_dir = os.path.abspath(os.path.join(os.path.curdir, "../runs", FLAGS.run_name))
     if not os.path.exists(out_dir):
             os.makedirs(out_dir)
     print("Writing to {}\n".format(out_dir))
