@@ -6,7 +6,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 import tensorflow as tf
 import tensorlayer as tl
 import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
+import time
 import warnings
 
 import utils.algo_utils as algo_utils
@@ -138,6 +139,7 @@ def get_onehot_state(state, filters_def_dict):
         else:
             all_a = sorted(filters_def_dict[q])
         # if q has been answered in state
+        print(all_a)
         if q in state.keys():
             a = state[q]  #get answers from that question
             if not isinstance(a,list):
@@ -150,6 +152,7 @@ def get_onehot_state(state, filters_def_dict):
         # if q has NOT been answered in state
         else:
             [onehot_state.append(0) for i in range(len(all_a))]
+        print(sum(onehot_state))
     return onehot_state
 
 def get_index_question(question_list, filters_def_dict):
@@ -217,7 +220,7 @@ if __name__=="__main__":
     parser.add_argument("-p3a", "--p3a",
                     help="proba of user giving 3 answers to a question", type=float)
     args = parser.parse_args()
-    size = args.size if args.size else 200
+    size = args.size if args.size else 1
     a_hist = args.a_hist if args.a_hist else 0.0
     p_idk = args.pidk if args.pidk else 0.0
     p_2a = args.p2a if args.p2a else 0.0
@@ -234,4 +237,7 @@ if __name__=="__main__":
     if not os.path.exists(os.path.join(os.path.curdir, "../runs_dagger/")):
             os.makedirs(os.path.join(os.path.curdir, "../runs_dagger/"))
     print("Saving dagger to {}\n".format(os.path.join(os.path.curdir, "../runs_dagger/")))
-    tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list}, name = '../runs_dagger/s{}_p2a{}_p3a{}_pidk{}_a{}_tmp.npy'.format(size, p_2a, p_3a, p_idk, a_hist))
+    timestamp = str(int(time.time()))
+    tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list},
+                             name = '../runs_dagger/s{}_p2a{}_p3a{}_pidk{}_a{}_{}tmp.npy'.format(size, p_2a, p_3a, p_idk, a_hist, timestamp))
+
