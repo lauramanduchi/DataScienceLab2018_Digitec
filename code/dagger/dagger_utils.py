@@ -143,7 +143,6 @@ def get_onehot_state(state, filters_def_dict):
             if not isinstance(a,list):
                 a = a.tolist()
             for a_h in all_a: #for all possible answers of q
-                print(a_h)
                 if a_h in a:
                     onehot_state.append(1)
                 else:
