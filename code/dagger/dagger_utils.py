@@ -128,15 +128,15 @@ def get_onehot_state(state, filters_def_dict):
     Returns:
         onehot_state: one-hot vector state ([0,0,1,1,0,0,...,0,0])
     """
-    questions = sorted(filters_def_dict.keys())
+    questions = [int(float(q)) for q in sorted(filters_def_dict.keys())]
     onehot_state = []
     for q in questions:
         # Get all sorted possible answers
         # some questions have an answer type object and other a normal array
-        if filters_def_dict[q].dtype == object:
-            all_a = sorted(filters_def_dict[q].item())
+        if filters_def_dict[str(float(q))].dtype == object:
+            all_a = sorted(filters_def_dict[str(float(q))].item())
         else:
-            all_a = sorted(filters_def_dict[q])
+            all_a = sorted(filters_def_dict[str(float(q))])
         # if q has been answered in state
         if q in state.keys():
             a = state[q]  #get answers from that question
