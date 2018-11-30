@@ -132,12 +132,11 @@ if __name__=='__main__':
     # Set up output directory for models and summaries
     if FLAGS.run_name is None:
             timestamp = str(int(time.time()))
-            out_dir = os.path.abspath(os.path.join(os.path.curdir, "../runs", timestamp))
+            out_dir = os.path.abspath(os.path.join(os.path.curdir, "../runs/h1{}_h2{}_ts{}".format(FLAGS.h1, FLAGS.h2,timestamp))
     else:
             out_dir = os.path.abspath(os.path.join(os.path.curdir, "../runs", FLAGS.run_name))
     if not os.path.exists(out_dir):
             os.makedirs(out_dir)
-            os.makedirs(out_dir+'/results')
     print("Writing to {}\n".format(out_dir))
 
     checkpoint_path = out_dir + "/cp.ckpt"
@@ -279,7 +278,6 @@ if __name__=='__main__':
                 if done is True:  # stop if (# products < threshold) is True
                     break
                 else: 
-                    print(np.shape(one_hot_state_list))
                     # Reshape to be able to concatenate
                     onehot_state = np.reshape(onehot_state, (1, -1))
                     mask = np.reshape(mask, (1, -1))
