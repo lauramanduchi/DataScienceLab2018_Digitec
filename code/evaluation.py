@@ -9,18 +9,18 @@ import numpy as np
 import pandas as pd
 import argparse
 import warnings
-
+import dagger.dagger_utils as dagger_utils
+import utils.algo_utils as algo_utils
 from utils.algo_utils import get_proba_Y_distribution
 from utils.load_utils import load_obj, save_obj
 from utils.init_dataframes import init_df
-import utils.algo_utils as algo_utils
+
 from utils.sampler import sample_answers
 from greedy.MaxMI_Algo import max_info_algorithm, opt_step
 from greedy.RandomBaseline import random_baseline
-from dagger.evaluation import dagger_get_questions
-from dagger.dagger_utils import get_products
+from dagger.dagger_utils import dagger_get_questions, get_products
 from utils.build_answers_utils import question_id_to_text, answer_id_to_text
-import dagger.dagger_utils as dagger_utils
+
 from dagger.model import create_model
 
 """ This module runs the evaluation of MaxMI.
@@ -116,7 +116,7 @@ if use=='maxMI':
         f.write('Test set size: {} \n Probability of answering I dont know: {} \n Probability of giving 2 answers: {} Probability of giving 3 answers: {} \n'.format(size_test, p_idk, p_2a, p_3a))
         f.write('Alpha parameter: {}'.format(a_hist))
 else:
-    model_dir = '../runs/{}/'.format(run) #h1256_h2128_ts1543838439
+    model_dir = '../training_dagger/{}'.format(run) #h1256_h2128_ts1543838439
     checkpoint_model = model_dir+'/cp.ckpt' 
     with open(checkpoint_dir +'/parameters.txt', 'w+') as f:
         f.write('Test set size: {} \n Probability of answering I dont know: {} \n Probability of giving 2 answers: {} Probability of giving 3 answers: {} \n'.format(size_test, p_idk, p_2a, p_3a))
