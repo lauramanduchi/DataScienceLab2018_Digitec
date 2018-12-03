@@ -180,14 +180,18 @@ model = create_model(number_filters, length_state, h1 = FLAGS.h1, h2=FLAGS.h2)
 # Print summary of parameters
 model.summary()
 
+# Early stopping
+cp_early = tf.keras.callbacks.EarlyStopping(
+        monitor='val_acc', patience=2)
 # Fit the model
 model_history = model.fit([one_hot_state_list, mask_list],
                             one_ind_labels,
                             epochs=FLAGS.n_epochs_init,
                             batch_size=FLAGS.batch_size,
+                            shuffle=True,
                             validation_split=FLAGS.val_split, 
                             verbose=2,
-                            callbacks=[cp_callback])
+                            callbacks=[cp_callback, cp_early])
 
 # For the plots
 model_history_train_loss = model_history.history['loss']
