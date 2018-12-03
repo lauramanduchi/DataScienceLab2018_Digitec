@@ -13,3 +13,8 @@ code/dagger/__pycache__/
 /data_old/
 *.npy
 /runs_eval_dagger/
+/evaluation_maxMI/
+/evaluation_dagger/
+/training_dagger/
+/runs_dagger/
+/code/greedy/__pycache__/
