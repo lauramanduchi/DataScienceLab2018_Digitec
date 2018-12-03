@@ -39,8 +39,8 @@ tf.flags.DEFINE_integer("threshold", 50, "Length of the final subset of products
 tf.flags.DEFINE_integer("in_maxMI_size", 1000, "Initial number of products to run maxMI algorithm on (default:1000)")
 
 # Test parameters
-tf.flags.DEFINE_integer("batch_size", 32, "Batch Size (default: 32)")
-tf.flags.DEFINE_float("val_split", 0.1, "Fraction used for validation during training (default: 0.1)")
+tf.flags.DEFINE_integer("batch_size", 128, "Batch Size (default: 32)")
+tf.flags.DEFINE_float("val_split", 0.2, "Fraction used for validation during training (default: 0.1)")
 tf.flags.DEFINE_integer("n_epochs", 50, "Number of epochs during secondary training")
 tf.flags.DEFINE_integer("n_epochs_init", 100, "Number of init epochs (default: 1000)")
 tf.flags.DEFINE_integer("n_episodes", 3000, "Number of episodes (default: 500)")
@@ -139,7 +139,7 @@ checkpoint_dir = os.path.dirname(checkpoint_path)
 cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_path, 
                                                     save_weights_only=True,
                                                     verbose=1,
-                                                    period=50)
+                                                    period=1)
 
 
 # ============= TRAINING WITH INITIAL TEACHER DATA ========== #
@@ -182,7 +182,7 @@ model.summary()
 
 # Early stopping
 cp_early = tf.keras.callbacks.EarlyStopping(
-        monitor='val_acc', patience=2)
+        monitor='val_loss', patience=4)
 # Fit the model
 model_history = model.fit([one_hot_state_list, mask_list],
                             one_ind_labels,
@@ -220,7 +220,7 @@ plt.savefig(checkpoint_dir+"/acc-Init.png", dpi=300)
 
 # plt.show()  # If show the plot, must manually close the window to resume the execution of the program
 print(model_history.history.keys())
-
+"""
 # ============= COLLECT MORE DATA (EXPLORING NEW STATES) & RETRAIN NETWORK AT EACH EPISODE ========== #
 output_file = open(checkpoint_dir+'/results.txt', 'w')
 n_episodes = FLAGS.n_episodes
@@ -337,10 +337,4 @@ for episode in range(n_episodes):
         plt.legend()
         plt.xlim([0,max(model_history_epochs)])
         plt.savefig(checkpoint_dir+"/acc-E{}.png".format(episode), dpi=300)
-        """
-        # Plot loss and accuracy
-        dagger_utils.plot_history(model_history, key='loss')
-        plt.savefig(checkpoint_dir+'/results/'+"loss-E{}.png".format(episode), dpi=900)
-        dagger_utils.plot_history(model_history, key='acc')
-        plt.savefig(checkpoint_dir+'/results/'+"acc-E{}.png".format(episode), dpi=900)
         """
