@@ -145,7 +145,7 @@ def get_proba_Q_distribution(question_list, df_history, alpha):
     Q_proba = np.ones(n)/n
     # Step 2: taking into account history
     for i in range(n):
-        q_id = str(int(question_list[i]))
+        q_id = str(int(float(question_list[i])))
         try:
             Q_proba[i] += alpha * df_history["frequency"].loc[df_history["questionId"] == q_id].values[0]
         except IndexError:
