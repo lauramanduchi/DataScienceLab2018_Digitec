@@ -119,7 +119,7 @@ def dagger_get_questions(y, answers_y, model, filters_def_dict, products_cat):
         if len(np.unique(product_set['ProductId']))<50:
             break
     print('DAGGER: Return {} products.'.format(len(np.unique(product_set['ProductId']))))
-    return final_question_list, products_cat, y, final_question_text_list, answer_text_list
+    return final_question_list, product_set, y, final_question_text_list, answer_text_list
 
 
 # ============= MAIN EVALUATION LOOP =============== #
