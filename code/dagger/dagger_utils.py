@@ -15,6 +15,7 @@ from greedy.MaxMI_Algo import max_info_algorithm, opt_step
 import greedy.MaxMI_Algo as MaxMI
 from utils.sampler import sample_answers
 from utils.algo_utils import get_proba_Y_distribution
+from utils.build_answers_utils import question_id_to_text, answer_id_to_text
 
 def get_products(state, product_set, traffic_set=[], purchased_set=[]):
     """ Update the data tables from the state dict
@@ -49,7 +50,7 @@ def get_next_question_opt(state, product_set, traffic_set, purchased_set, thresh
     product_set, traffic_set, purchased_set = get_products(state, product_set,traffic_set, purchased_set)
     n = len(np.unique(product_set["ProductId"]))
     print('remaining prod {}'.format(n))
-    question_set_new = set(algo_utils.get_filters_remaining(product_set)) 
+    question_set_new = set(algo_utils.get_questions(product_set)) 
     question_set = question_set_new.difference(state.keys()) # state keys is the list of questions asked 
     if n < threshold :
         done = True  # the remain product_set is smaller than threshold
@@ -180,6 +181,65 @@ def plot_history(history, name='model', key='loss'):
     plt.ylabel(key.replace('_',' ').title())
     plt.legend()
     plt.xlim([0,max(history.epoch)])
+
+def dagger_get_questions(y, answers_y, model, question_text_df, answer_text_df, filters_def_dict, products_cat, number_filters):
+    final_question_list=[]
+    final_question_text_list=[]
+    answer_text_list = []
+    # Restore the model from the checkpoint
+    state = {}  # Initial state
+    # Loop until obtain all possible states (until # products in products set < threshold)
+    while True: 
+        # Get list of questions already asked
+        question_asked = state.keys()
+        # Convert to one-hot
+        one_ind_questions_asked = get_index_question(question_asked, filters_def_dict)
+        # Create the mask before the softmax layer (cannot ask twice the same question)
+        mask = np.ones(number_filters)
+        for q in one_ind_questions_asked:  # If question was already asked, set corresponding mask value to 0
+            mask[q] = 0
+        # Get one hot state encoding
+        onehot_state = get_onehot_state(state, filters_def_dict)
+        onehot_state = np.reshape(onehot_state, (1, -1))
+        mask = np.reshape(mask, (1, -1))
+        # Get predicted question from model for current state
+        probas = model.predict({'main_input': onehot_state, 'mask_input': mask})[0]  # Predict the one-hot label
+        onehot_prediction = np.argmax(probas)
+        q_pred = sorted(filters_def_dict.keys())[onehot_prediction]  # Get the number of predicted next question
+        question_text = question_id_to_text(q_pred, question_text_df)
+        final_question_list.append(int(float(q_pred)))
+        final_question_text_list.append(question_text)
+        print("DAGGER: Question is: {}".format(question_text))
+        # Update (answer) state according to that prediction
+        answers_to_pred = answers_y.get(float(q_pred))  # Get answer (from randomly sample product) to chosen question
+        answer_text = answer_id_to_text(answers_to_pred, q_pred, answer_text_df)
+        print("DAGGER: Answer given was: id:{} text: {}".format(answers_to_pred, answer_text))
+        answer_text_list.append(answer_text)
+        state[q_pred] = list(answers_to_pred)
+        product_set, _, _ = get_products(state, products_cat,[], [])
+        if len(np.unique(product_set['ProductId']))<50:
+            break
+    print('DAGGER: Return {} products.'.format(len(np.unique(product_set['ProductId']))))
+    return final_question_list, product_set, y, final_question_text_list, answer_text_list
+
+def dagger_one_step(model, state, number_filters, filters_def_dict):
+    # Get list of questions already asked
+    question_asked = state.keys()
+     # Convert to one-hot
+    one_ind_questions_asked = get_index_question(question_asked, filters_def_dict)
+    # Create the mask before the softmax layer (cannot ask twice the same question)
+    mask = np.ones(number_filters)
+    for q in one_ind_questions_asked:  # If question was already asked, set corresponding mask value to 0
+        mask[q] = 0
+    # Get one hot state encoding
+    onehot_state = get_onehot_state(state, filters_def_dict)
+    onehot_state = np.reshape(onehot_state, (1, -1))
+    mask = np.reshape(mask, (1, -1))
+    # Get predicted question from model for current state
+    probas = model.predict({'main_input': onehot_state, 'mask_input': mask})[0]  # Predict the one-hot label
+    onehot_prediction = np.argmax(probas)
+    q_pred = sorted(filters_def_dict.keys())[onehot_prediction]  # Get the number of predicted next question
+    return q_pred
 
 
 if __name__=="__main__":
