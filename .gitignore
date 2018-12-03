@@ -12,3 +12,4 @@ code/utils/__pycache__/
 code/dagger/__pycache__/
 /data_old/
 *.npy
+/runs_eval_dagger/
