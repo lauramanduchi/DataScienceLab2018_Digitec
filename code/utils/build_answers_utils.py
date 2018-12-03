@@ -179,10 +179,10 @@ def map_text_new_answer(df, answer_text_df, type_filters, filters_def_dict):
     for i in df.index.values:
         filter = df.loc[i, "PropertyDefinitionId"] 
         if (type_filters[str(filter)]=='option' or type_filters[str(filter)]=='mixed'):
-            if len(answer_text_df.loc[answer_text_df["PropertyDefinitionOptionId"] == str(int(df.loc[i, "answer"])),"PropertyDefinitionOption"].values) == 0:
+            if len(answer_text_df.loc[answer_text_df["PropertyDefinitionOptionId"] == str(int(float(df.loc[i, "answer"]))),"PropertyDefinitionOption"].values) == 0:
                 text_answers.append(str(df.loc[i, "answer"]))
             else:
-                text_answers.append(answer_text_df.loc[answer_text_df["PropertyDefinitionOptionId"] == str(int(df.loc[i, "answer"])),"PropertyDefinitionOption"].values[0])
+                text_answers.append(answer_text_df.loc[answer_text_df["PropertyDefinitionOptionId"] == str(int(float(df.loc[i, "answer"]))),"PropertyDefinitionOption"].values[0])
                 #print(answer_text_df.loc[answer_text_df["PropertyDefinitionOptionId"] == str(int(df.loc[i, "answer"])),"PropertyDefinitionOption"].values[0])
         elif type_filters[str(filter)]=='bin':
             bins = filters_def_dict[str(filter)]
@@ -394,7 +394,7 @@ def question_id_to_text(question, question_df):
         question_text: string of the question  
     """
     try:
-        question_text = question_df.loc[question_df["PropertyDefinitionId"] == str(int(question)), "PropertyDefinition"].values[0]
+        question_text = question_df.loc[question_df["PropertyDefinitionId"] == str(int(float(question))), "PropertyDefinition"].values[0]
     except IndexError:
         question_text = 'No text equivalent for question'
     return question_text
@@ -426,7 +426,7 @@ def answer_id_to_text(answer, question, answer_df):
             answer_list.append('none')
         else:
             try:
-                answer_list.append(answer_df.loc[(answer_df["answer_id"] == i) & (answer_df["question_id"] == int(question)), "answer_text"].astype(str).values[0])
+                answer_list.append(answer_df.loc[(answer_df["answer_id"] == i) & (answer_df["question_id"] == int(float(question))), "answer_text"].astype(str).values[0])
             except TypeError:
                 answer_list.append(i)
             except IndexError:
