@@ -128,8 +128,6 @@ def get_answers_y(y, product_set):
             res.update({q: 'idk'})
     return(res)
 
-def get_filters_remaining(dataset):
-    return(dataset["PropertyDefinitionId"].drop_duplicates().values)
 
 def get_proba_Q_distribution(question_list, df_history, alpha):
     """Compute the probability of the filters according to history:
