@@ -29,7 +29,7 @@ This module runs DAgger Algorithm
        and adds those trajectories to the dataset
     4) Train the network again to find the policy that best mimics the teacher on the aggregated dataset
 
-The results file can be found in the runs/cp.ckpt folder. 
+The results file can be found in the training_dagger/cp.ckpt folder. 
 """
 # ============= PARAMETERS ========== #
 
@@ -125,9 +125,9 @@ except:
 # Set up output directory for models and summaries
 if FLAGS.run_name is None:
     timestamp = str(int(time.time()))
-    out_dir = os.path.abspath(os.path.join(os.path.curdir, "../runs/h1{}_h2{}_ts{}".format(FLAGS.h1, FLAGS.h2,timestamp)))
+    out_dir = os.path.abspath(os.path.join(os.path.curdir, "../training_dagger/h1{}_h2{}_ts{}".format(FLAGS.h1, FLAGS.h2,timestamp)))
 else:
-    out_dir = os.path.abspath(os.path.join(os.path.curdir, "../runs", FLAGS.run_name))
+    out_dir = os.path.abspath(os.path.join(os.path.curdir, "../training_dagger/", FLAGS.run_name))
 if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 print("Writing to {}\n".format(out_dir))
@@ -182,7 +182,7 @@ model.summary()
 
 # Early stopping
 cp_early = tf.keras.callbacks.EarlyStopping(
-        monitor='val_loss', patience=4)
+        monitor='val_acc', patience=4)
 # Fit the model
 model_history = model.fit([one_hot_state_list, mask_list],
                             one_ind_labels,
@@ -220,7 +220,7 @@ plt.savefig(checkpoint_dir+"/acc-Init.png", dpi=300)
 
 # plt.show()  # If show the plot, must manually close the window to resume the execution of the program
 print(model_history.history.keys())
-"""
+
 # ============= COLLECT MORE DATA (EXPLORING NEW STATES) & RETRAIN NETWORK AT EACH EPISODE ========== #
 output_file = open(checkpoint_dir+'/results.txt', 'w')
 n_episodes = FLAGS.n_episodes
@@ -302,7 +302,7 @@ for episode in range(n_episodes):
     
     # Retrain the model with the new data at the end of the episode
     # Only retrain every 500 episodes
-    if episode % 500==0:
+    if episode % 200==0:
         # Last state is not relevant for training, since no predicted next state (question)
         model_history = model.fit([one_hot_state_list, mask_list],
                                     one_ind_labels,
@@ -310,7 +310,7 @@ for episode in range(n_episodes):
                                     batch_size=FLAGS.batch_size,
                                     validation_split=FLAGS.val_split,
                                     verbose=2,
-                                    callbacks=[cp_callback])
+                                    callbacks=[cp_callback, cp_early])
     
         model_history_epochs = np.append(model_history_epochs, model_history.epoch)
         model_history_train_loss = np.append(model_history_train_loss, model_history.history['loss'])
@@ -337,4 +337,4 @@ for episode in range(n_episodes):
         plt.legend()
         plt.xlim([0,max(model_history_epochs)])
         plt.savefig(checkpoint_dir+"/acc-E{}.png".format(episode), dpi=300)
-        """
+
