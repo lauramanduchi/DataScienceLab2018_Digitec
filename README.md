@@ -1,5 +1,5 @@
 # Improving Shopping Experience at Galaxus-Digitec
-# Data Science Lab - Fall 2018 - ETH Zurich
+## Data Science Lab - Fall 2018 - ETH Zurich
 ### Mélanie Bernhardt - Mélanie Gaillochet - Laura Manduchi
 
 ## Overview of the project
