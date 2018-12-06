@@ -3,7 +3,7 @@ Mélanie Bernhardt - Mélanie Gaillochet - Laura Manduchi
 
 This modules defines the greedy algorithm based on
 maximzing the Mutual information.
-""""
+"""
 
 import sys
 import os.path
