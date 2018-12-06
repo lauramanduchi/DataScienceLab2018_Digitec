@@ -1,9 +1,10 @@
-import sys
-import os.path
-# To import from sibling directory ../utils
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+""" Data Science Lab Project - FALL 2018
+Mélanie Bernhardt - Mélanie Gaillochet - Laura Manduchi
 
-from utils.load_utils import load_obj
+This file just contains the helper function to 
+merge several data files from several teacher runs.
+"""
+
 import tensorlayer as tl
 import numpy as np
 
