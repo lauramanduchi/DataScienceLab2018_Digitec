@@ -40,11 +40,11 @@ def create_model(number_filters, length_state, h1=2048, h2=1024, h3=512, h4=256)
         if not h4 == 0:
             x = keras.layers.Dense(h4, activation=tf.nn.relu, input_shape=(length_state,))(x)
             x = keras.layers.Dropout(rate=0.3)(x)
-        probas =keras.layers.Dense(number_filters, activation=tf.nn.softmax)(x)
+        probas = keras.layers.Dense(number_filters, activation=tf.nn.softmax)(x)
         # Have to apply the mask AFTER softmax
         out = keras.layers.Lambda(lambda x: x[0]*x[1])([probas, mask_input]) 
         # Wrap everythin in Keras model
-        model =  keras.Model(inputs=[main_input, mask_input], outputs=out)
+        model = keras.Model(inputs=[main_input, mask_input], outputs=out)
         # Compile the model
         model.compile(optimizer=tf.train.AdamOptimizer(learning_rate=0.001), 
                 loss='sparse_categorical_crossentropy',
