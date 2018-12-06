@@ -169,25 +169,58 @@ def get_index_question(question_list, filters_def_dict):
         all_indices.append(i)
     return np.asarray(all_indices)
 
+def plot_history(epochs, metric_history_val, metric_history_train, x_breaks, title, filename):
+    """ Helper for plot history.
 
-# taken from https://www.tensorflow.org/tutorials/keras/overfit_and_underfit
-def plot_history(history, name='model', key='loss'):
+    Args:
+        epochs: number of epochs
+        metric_history_val: list of metric values on the validation set per epoch.
+        metric_history_train: list of metric values on the train set per epoch.
+        x_breaks: x-coord of the vertical lines in the plot to distinguish the different rounds. 
+        title: title of the plot
+        filename: filename to save the plot.
+    """
     plt.figure(figsize=(16,10))
-    val = plt.plot(history.epoch, history.history['val_'+key],
-                   '--', label=name.title()+' Val')
-    plt.plot(history.epoch, history.history[key], color=val[0].get_color(),
-             label=name.title()+' Train')
+    plt.plot(np.arange(1, epochs+1), metric_history_val,'--', color='b', label='Validation set'.title())
+    plt.plot(np.arange(1, epochs+1), metric_history_train, color='b', label='Training set'.title())
+    for xc in x_breaks:
+        plt.axvline(x=(xc-1), linestyle='--', color='k', linewidth=0.5)
     plt.xlabel('Epochs')
-    plt.ylabel(key.replace('_',' ').title())
+    plt.ylabel(title.title())
     plt.legend()
-    plt.xlim([0,max(history.epoch)])
+    plt.xlim([1, epochs])
+    plt.xticks(np.arange(1, epochs+1))
+    plt.savefig(filename, dpi=300)
 
 def dagger_get_questions(y, answers_y, model, question_text_df, answer_text_df, filters_def_dict, products_cat, number_filters):
+    """ This function returns the list of questions for one sampled user with
+    one trained instance of dagger.
+
+    Note:
+        You have to first trained the model and initialize it.
+
+    Args:
+        y: target productID for the sampled user
+        answers_y: sampled answers for this product.
+        model: trained model
+        question_text_df: table to link questionId to text [PropertyDefinition	PropertyDefinitionId]
+        answer_text_df: table to link answerId to text [answer_id	question_id	answer_text]
+        filters_def_dict: dict where key is questionId value is array of all possible (modified) answers
+        products_cat: extract of product catalog for category 6
+        number_filters: number of available questions
+    Returns:
+        final_question_list: sequence of questionId to ask
+        product_set: final product list
+        y: product chosen as input of algo
+        final_question_text_list:  sequence of questionText to ask
+        answer_text_list: answers for each final question
+    """
     final_question_list=[]
     final_question_text_list=[]
     answer_text_list = []
     # Restore the model from the checkpoint
-    state = {}  # Initial state
+    # Initial state
+    state = {}  
     # Loop until obtain all possible states (until # products in products set < threshold)
     while True: 
         # Get list of questions already asked
@@ -223,6 +256,17 @@ def dagger_get_questions(y, answers_y, model, question_text_df, answer_text_df, 
     return final_question_list, product_set, y, final_question_text_list, answer_text_list
 
 def dagger_one_step(model, state, number_filters, filters_def_dict):
+    """ Find the next optimal question from a trained model.
+
+    Args:
+        model: trained model
+        state: input state to predict the next question
+        number_filters: number of available questions
+        filters_def_dict: dict where key is questionId value is array of all possible (modified) answers
+    
+    Returns:
+        q_pred: id of the next question to ask.
+    """
     # Get list of questions already asked
     question_asked = state.keys()
      # Convert to one-hot
@@ -243,6 +287,13 @@ def dagger_one_step(model, state, number_filters, filters_def_dict):
 
 
 if __name__=="__main__":
+    """ The main procedure of this file is used to launch one run of teacher training.
+    It runs the optimal algorithm and saves the results to a file.
+    By launching this script several time with different parameters you get several teacher files
+    that can later be aggregated in order to create the initial training dataset. 
+
+    See ReadMe for more details.
+    """
     import tensorlayer as tl
     from utils.load_utils import load_obj, save_obj
     import argparse
