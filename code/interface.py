@@ -11,6 +11,8 @@ It assumes the best dagger model is saved in the
 """
 import sys
 import os.path
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 import time
 import os
 import numpy as np
@@ -21,8 +23,7 @@ from tkinter import *
 from tkinter import ttk
 import random as rd
 from PIL import Image
-# To import from sibling directory ../utils
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
 
 from utils.load_utils import load_obj, save_obj
 from utils.sampler import sample_answers
