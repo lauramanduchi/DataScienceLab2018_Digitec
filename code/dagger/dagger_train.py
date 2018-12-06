@@ -1,31 +1,6 @@
-import sys
-import os.path
-# To import from sibling directory ../utils
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
-from tensorflow import keras
-import tensorflow as tf
-import tensorlayer as tl
-import numpy as np
-import time
-import warnings
-import matplotlib as mpl
-if os.environ.get('DISPLAY','') == '':
-    print('no display found. Using non-interactive Agg backend')
-    mpl.use('Agg')
-import matplotlib.pyplot as plt
+""" Data Science Lab Project - FALL 2018
+Mélanie Bernhardt - Mélanie Gaillochet - Laura Manduchi
 
-import dagger.dagger_utils as dagger_utils
-from utils.init_dataframes import init_df
-from utils.load_utils import load_obj, save_obj
-import utils.sampler as sampler
-from dagger.model import create_model
-import utils.algo_utils
-
-# To remove future warning from being printed out
-warnings.simplefilter(action='ignore', category=FutureWarning)
-
-
-""" 
 This module runs DAgger Algorithm
     1) Get initial dataset of trajectories from the teacher
     2) Train a initial policy that best mimics the expert on those trajectories
@@ -37,8 +12,32 @@ The results file can be found in the training_dagger/cp.ckpt folder.
 
 More details about the DAgger algorithm can be found on the report. 
 """
-# ============= PARAMETERS ========== #
 
+import sys
+import os.path
+import time
+import warnings
+
+from tensorflow import keras
+import tensorflow as tf
+import tensorlayer as tl
+import numpy as np
+import matplotlib.pyplot as plt
+
+import dagger.dagger_utils as dagger_utils
+import utils.algo_utils as algo_utils
+import utils.sampler as sampler
+
+from utils.load_utils import load_obj, save_obj
+from dagger.model import create_model
+
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+# To remove future warning from being printed out
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+
+# ============= PARAMETERS SET UP ========== #
 # Data loading parameters
 tf.flags.DEFINE_string("run_name", None, "Custom run name to save (default: none)")
 tf.flags.DEFINE_integer("threshold", 50, "Length of the final subset of products (default: 50")
@@ -61,7 +60,7 @@ tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on 
 
 FLAGS = tf.flags.FLAGS
 
-"""Printing model configuration to command line"""
+# Printing model configuration to command line
 print("\nParameters:")
 for attr, value in sorted(FLAGS.__flags.items()):
     print("{}={}".format(attr.upper(), value.value))
@@ -97,13 +96,13 @@ except:
     try:
         df_history = load_obj('../data/df_history')
     except:
-        df_history = utils.algo_utils.create_history(traffic_cat, question_text_df)
+        df_history = algo_utils.create_history(traffic_cat, question_text_df)
         save_obj(df_history, '../data/df_history')
         print("Created history")
     
     # Get question list and state_list of the form : {"q1":[a1,a2], "q2":[a3], "q3":[a4, a6] ..}
     # Use history
-    a_hist=1
+    a_hist = 1
     state_list, question_list = dagger_utils.get_data_from_teacher(products_cat,
                                                                     traffic_cat,
                                                                     purchased_cat,
@@ -300,7 +299,7 @@ for episode in range(n_episodes):
     output_file.write('Episode: %02d\t Number or questions: %02d\n' % (episode, len(state)))
     
     # Retrain the model with the new data every 200 episodes
-    if episode % 1==0: #TODO 200
+    if episode % 200==0:
         model_history = model.fit([one_hot_state_list, mask_list],
                                     one_ind_labels,
                                     epochs=FLAGS.n_epochs,
