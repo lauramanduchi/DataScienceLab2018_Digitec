@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+""" Data Science Lab Project - FALL 2018
+Mélanie Bernhardt - Mélanie Gaillochet - Laura Manduchi
+
+This file contains all helper functions for init_dataframes.
+"""
+
 import pandas as pd
 import numpy as np
 from utils.parser import parse_query_string
@@ -432,28 +439,3 @@ def answer_id_to_text(answer, question, answer_df):
             except IndexError:
                 answer_list.append('Not Found: ' + str(i))
     return (answer_list)
-
-
-
-# To test some functions
-if __name__=='__main__':
-    from utils.load_utils import load_obj
-    from utils.sampler import sample_answers
-    try:
-        products_cat = load_obj('../data/products_table')
-        traffic_cat = load_obj('../data/traffic_table')
-        purchased_cat = load_obj('../data/purchased_table')
-        question_text_df = load_obj('../data/question_text_df')
-        answer_text = load_obj('../data/answer_text')
-        print("Loaded datsets")
-    except:
-        print("Creating datasets...")
-
-    y = products_cat["ProductId"][10]
-    threshold = 50
-    print(products_cat["ProductId"].dtype) #int
-    print(products_cat["PropertyDefinitionId"].dtype) #int
-    print(products_cat["answer"].dtype) #float
-    answers_y = sample_answers(y, products_cat)
-    for key, answer in answers_y.items():
-        print(answer_id_to_text(answer, key, answer_text))
