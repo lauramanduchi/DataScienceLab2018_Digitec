@@ -1,29 +1,7 @@
-import sys
-import os.path
-# To import from sibling directory ../utils
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+""" Data Science Lab Project - FALL 2018
+Mélanie Bernhardt - Mélanie Gaillochet - Laura Manduchi
 
-import time
-import os
-import numpy as np
-import pandas as pd
-import argparse
-import warnings
-import dagger.dagger_utils as dagger_utils
-import utils.algo_utils as algo_utils
-from utils.algo_utils import get_proba_Y_distribution
-from utils.load_utils import load_obj, save_obj
-from utils.init_dataframes import init_df
-
-from utils.sampler import sample_answers
-from greedy.MaxMI_Algo import max_info_algorithm, opt_step
-from greedy.RandomBaseline import random_baseline
-from dagger.dagger_utils import dagger_get_questions, get_products
-from utils.build_answers_utils import question_id_to_text, answer_id_to_text
-
-from dagger.model import create_model
-
-""" This module runs the evaluation of MaxMI.
+This module runs the evaluation of MaxMI.
 For each target product in the test set.
     * Sample the answers
     * Find the optimal list of questions with MaxMI or Dagger
@@ -35,7 +13,33 @@ The results file can be found in the runs_maxMI/run_number folder.
 If run_number is not specified the timestep is used instead.
 """
 
-# ============= GENERAL SETUP =========== #
+import sys
+import os.path
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
+import time
+import os
+import numpy as np
+import pandas as pd
+import argparse
+import warnings
+
+import dagger.dagger_utils as dagger_utils
+import utils.algo_utils as algo_utils
+from utils.algo_utils import get_proba_Y_distribution
+from utils.load_utils import load_obj, save_obj
+from utils.init_dataframes import init_df
+
+from utils.sampler import sample_answers
+from greedy.MaxMI_Algo import max_info_algorithm, opt_step
+from greedy.RandomBaseline import random_baseline
+from dagger.dagger_utils import dagger_get_questions, get_products
+from utils.build_answers_utils import question_id_to_text, answer_id_to_text
+from dagger.model import create_model
+
+
+# ============= GENERAL PARAMETERS SETUP =========== #
 time.time()
 t = time.strftime('%H%M%S')
 print("Started on: {}".format(time.strftime('%d-%b-%y at %H:%M:%S')))
@@ -75,7 +79,6 @@ checkpoint_dir = cwd+'/../evaluation_{}/'.format(use)  + suffix + '/'
 os.makedirs(checkpoint_dir, 0o777)
 print('Saving to ' + checkpoint_dir)
 
-
 # To remove future warning from being printed out
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -110,21 +113,26 @@ if a_hist > 0 and use=='MaxMI':
         print("Created history")
 
 
-# ============= INIT VARIABLES ========== #
+# ============= INITIALIZE VARIABLES ========== #
 if use=='maxMI':
     with open(checkpoint_dir +'/parameters.txt', 'w+') as f:
-        f.write('Test set size: {} \n Probability of answering I dont know: {} \n Probability of giving 2 answers: {} Probability of giving 3 answers: {} \n'.format(size_test, p_idk, p_2a, p_3a))
+        f.write('Test set size: {} \n Probability of answering I dont know: {} \n'.format(size_test, p_idk) +
+                 'Probability of giving 2 answers: {} Probability of giving 3 answers: {} \n'.format(p_2a, p_3a))
         f.write('Alpha parameter: {}'.format(a_hist))
 else:
-    model_dir = '../training_dagger/{}'.format(run) #h1256_h2128_ts1543838439
+    model_dir = '../training_dagger/{}'.format(run)
     checkpoint_model = model_dir+'/cp.ckpt' 
     with open(checkpoint_dir +'/parameters.txt', 'w+') as f:
-        f.write('Test set size: {} \n Probability of answering I dont know: {} \n Probability of giving 2 answers: {} Probability of giving 3 answers: {} \n'.format(size_test, p_idk, p_2a, p_3a))
+        f.write('Test set size: {} \n Probability of answering I dont know: {} \n'.format(size_test, p_idk) +
+                 'Probability of giving 2 answers: {} Probability of giving 3 answers: {} \n'.format(p_2a, p_3a))
         f.write('Loading the latest model from {}'.format(checkpoint_model))   
-#probabilities of products given traffic
+
+# Get Probabilities of products given traffic
 p_y = get_proba_Y_distribution(products_cat, purchased_cat, alpha=1)["final_proba"].values
 y_array = np.random.choice(products_cat["ProductId"].drop_duplicates().values, size = size_test, p = p_y)
 threshold = 50
+
+# Initialize all the placeholders
 length_opt = []
 length_rdm = []
 opt_quest = []
@@ -136,6 +144,7 @@ rdm_answer_text_list = []
 opt_prod_nb = []
 rdm_prod_nb = []
 
+# Create the headers for the results file
 with open(checkpoint_dir +'/lengths.csv', 'w+') as f:
     f.write("{}, Random \n".format(use))
 with open(checkpoint_dir +'/rdm.csv', 'w+') as f:
@@ -197,9 +206,17 @@ for y in y_array:
     opt_answer_text_list.append(answer_text_list)
 
     # Compute random baseline
-    rb_final_question_list, rb_product_set, rb_y, rb_final_question_text_list, rb_answer_text_list = random_baseline(products_cat, traffic_cat, purchased_cat,
-                                                                 question_text_df, answer_text_df, threshold, y, answers_y)
+    rb_final_question_list, rb_product_set, rb_y, rb_final_question_text_list, rb_answer_text_list = random_baseline(
+                                                                                                        products_cat,
+                                                                                                        traffic_cat,
+                                                                                                        purchased_cat,
+                                                                                                        question_text_df,
+                                                                                                        answer_text_df,
+                                                                                                        threshold,
+                                                                                                        y,
+                                                                                                        answers_y)
     rdm_prod_nb.append(len(np.unique(rb_product_set["ProductId"])))
+    
     # Save results for random baseline
     length_rdm.append(len(rb_final_question_list))
     rdm_quest.append(rb_final_question_list)
@@ -208,7 +225,7 @@ for y in y_array:
     print('the length of random filter was {}'.format(len(rb_final_question_list)))
     rdm_quest.append(rb_final_question_list)
     
-    # Save result to external files
+    # Save indiviudal results to external files
     with open(checkpoint_dir +'/lengths.csv', 'a+') as f:
         f.write('{}, {} \n'.format(length_opt[-1], length_rdm[-1]))
     with open(checkpoint_dir +'/{}.csv'.format(use), 'a+') as f:
@@ -218,8 +235,12 @@ for y in y_array:
 
 # Save the summary statistics of the run in summary.txt
 with open(checkpoint_dir +'/summary.txt', 'w+') as f:
-    f.write('Test set size: {} \n Probability of answering I dont know: {} \n Probability of giving 2 answers: {} Probability of giving 3 answers: {} \n'.format(size_test, p_idk, p_2a, p_3a))
-    f.write('Alpha history parameter: {}'.format(a_hist))
+    f.write('Test set size: {} \n Probability of answering I dont know: {} \n'.format(size_test, p_idk) +
+                 'Probability of giving 2 answers: {} Probability of giving 3 answers: {} \n'.format(p_2a, p_3a))
+    if use=='maxMI':
+        f.write('Alpha history parameter: {}'.format(a_hist))
+    else:
+        f.write('Loading the latest model from {}'.format(checkpoint_model)) 
     f.write('Avg number of questions for {}: {} \n'.format(use, np.mean(np.asarray(length_opt))))
     f.write('Median number of questions for {}: {} \n'.format(use,np.median(np.asarray(length_opt))))
     f.write('Std number of questions for {}: {} \n'.format(use, np.std(np.asarray(length_opt))))
