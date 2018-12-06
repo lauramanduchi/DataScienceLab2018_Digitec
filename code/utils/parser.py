@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-This parser was written by Mohammed Ajil of Digitec to 
-helps us to parse the RequestUrl from the traffic data table.
+""" Data Science Lab Project - FALL 2018
+Mélanie Bernhardt - Mélanie Gaillochet - Laura Manduchi
+
+This parser was written by Digitec to 
+helps us to parse the RequestUrl from 
+the traffic data table.
 """
 
 # PropertyGroup is for example Width, Table Properties or RAM
@@ -12,7 +15,7 @@ helps us to parse the RequestUrl from the traffic data table.
 # - If we have a fixed set of options they are PropertyDefinitionOption objects.
 # PropertyDefinitionOption is actually a choice of Shape or RAM Type
 # A Property links a ProductType a ProductDefinition and a Product Group
-# A Property itself can also take one or multiple values -> TODO
+# A Property itself can also take one or multiple values
 
 # The parser handles the query string on pages that support filtering.
 # The output is represents the currently selected options 
@@ -20,12 +23,12 @@ helps us to parse the RequestUrl from the traffic data table.
 import json
 
 def handle_opt(opt, result):
-    '''
+    """
     This section handles properties that either directly have a primitive type value (bool, multidimensional properties)
     or Properties that link a PropertyGroup and PropertyDefinition which again map directly to a primitive type value.
     The Properties that directly have a primitive value will have the value in the coloumn PropertyValue
     Also the properties with a list of possible values will have the value in the coloumn PropertyValue
-    '''
+    """
     parts = opt.split('|')
     for part in parts:
         # Boolean properties
