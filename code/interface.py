@@ -1,8 +1,16 @@
+""" Data Science Lab Project - FALL 2018
+Mélanie Bernhardt - Mélanie Gaillochet - Laura Manduchi
+
+This file defines the interactive user interface.
+
+You can choose to use dagger or maxMI the algorithm
+that computes the next question. By default it uses 
+our best dagger trained dagger model in the backend.
+It assumes the best dagger model is saved in the 
+'default' subfolder of the 'training_dagger' folder.
+"""
 import sys
 import os.path
-# To import from sibling directory ../utils
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
-
 import time
 import os
 import numpy as np
@@ -12,31 +20,34 @@ import warnings
 from tkinter import *
 from tkinter import ttk
 import random as rd
-from PIL import Image, ImageTk
+from PIL import Image
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 
-
-from utils.load_utils import *
-from utils.init_dataframes import init_df
+from utils.load_utils import load_obj, save_obj
+from utils.sampler import sample_answers
 import utils.algo_utils as algo_utils
+import dagger.dagger_utils as dagger_utils
+import utils.build_answers_utils as build_answers_utils
+
 from utils.sampler import sample_answers
 from greedy.MaxMI_Algo import max_info_algorithm, opt_step
 from utils.build_answers_utils import question_id_to_text, answer_id_to_text, process_answers_filter
 from greedy.RandomBaseline import random_baseline
-import dagger.dagger_utils as dagger_utils
-import utils.build_answers_utils as build_answers_utils
 from dagger.model import create_model
 
-#from greedy.evaluation_live import get_next_q_user
 # To remove future warning from being printed out
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
 class MyApplication(Frame):
+    """ This class defines the Tkinter application
+    """
     def __init__(self, product_set, traffic_set, purchased_set, question_text_df, answer_text_df, threshold, filters_def_dict, type_filters):
         self.use='dagger'
-        #load the NN if necessary
+        # load the trained model if necessary
         if self.use=='dagger':
-            run = 'default' #TODO how to customize this easliy?
+            run = 'default'
             model_dir = '../training_dagger/{}'.format(run)
             checkpoint_model = model_dir+'/cp.ckpt'
             print('Loading the latest model from {}'.format(checkpoint_model))
@@ -46,7 +57,7 @@ class MyApplication(Frame):
             self.model.load_weights(checkpoint_model)
             self.state = {}
 
-        # Including all necessary data
+        # include all necessary data
         self.product_set = product_set
         self.traffic_set = traffic_set
         self.purchased_set = purchased_set
@@ -65,15 +76,15 @@ class MyApplication(Frame):
         self.root.columnconfigure(0, weight=2)
         self.root.rowconfigure(0, weight=1)
 
-
-        # Title of the interface - Questions
+        # title of the interface - questions
         self.title = StringVar()
         self.title.set("Question 1")
         self.titleLabel = ttk.Label(self.mainframe, textvariable=self.title, font=("Helvetica", 18)).grid(column=2, row=1, columnspan=3, sticky=(W, E))
 
-        # Title of the question
+        # title of the question
         self.question = IntVar()
-        #get first question
+        
+        # get first question
         if self.use=='maxMI':
             self.next_question = opt_step(self.question_set, 
                                      self.product_set, 
@@ -90,21 +101,22 @@ class MyApplication(Frame):
         self.questionLabel = ttk.Label(self.mainframe, textvariable=self.question_text).grid(column=2, row=4, columnspan=3, sticky=(W, E))
 
 
-        # Multiple choice list of answers
+        # multiple choice list of answers
         self.answer_set = self.product_set.loc[self.product_set["PropertyDefinitionId"] == int(self.question.get()), "answer"].drop_duplicates().values
         print("answer set: {}".format(self.answer_set))
         print("answer set: {}".format(type(self.answer_set)))
         print('int(self.question.get()): {}'.format(int(self.question.get())))
         self.text_answers = build_answers_utils.answer_id_to_text(self.answer_set, int(self.question.get()), self.answer_text_df)
 
-
+        # Define the scroll bar for the question list
         self.yScroll = Scrollbar(self.mainframe, orient=VERTICAL)  # scroll bar
         self.yScroll.grid(row=6, column=1, sticky=N + S)
 
+        # Define the list box
         listbox = Listbox(self.mainframe, yscrollcommand=self.yScroll.set, selectmode='multiple')
         for var in self.text_answers:
             listbox.insert(END, var)
-        listbox.select_set(0)  # sets the first element
+        listbox.select_set(0)
         self.answerList = listbox
         self.answerList.grid(column=2, row=6, columnspan=5, sticky=W)
 
@@ -128,18 +140,12 @@ class MyApplication(Frame):
 
 
     def next(self):
-        """ this is the function called when you press next
-        it should TODO
-        1. modify the text of the question
-        2. modify the list of the answers
-        3. update nb product left
-        4. update nb question asked
-
-        if underthreshold
-        answer list empty (or deleted) 
-        question label is "you have finished everything"
-
-        For now it updates the thing just to show its works.
+        """ This is the function called when you press next
+        What does it do?
+            1. modify the text of the question
+            2. modify the list of the answers
+            3. update nb product left
+            4. update nb question asked
         """
         # Update answer as answer selected. If no answer given, then consider as 'idk'
         id_values = [self.answer_set[idx] for idx in self.answerList.curselection()]
@@ -153,20 +159,20 @@ class MyApplication(Frame):
         print("values: {}".format(values))
         self.state[self.next_question] = list(values)
         print(self.state)
-        print("self.question.get(): {}".format(self.question.get())) #For debugging
+        print("self.question.get(): {}".format(self.question.get()))
         # Updating product_set, traffic_set, purchased_set, answer_set and question set
         self.product_set, self.traffic_set, self.purchased_set = algo_utils.select_subset(question=self.question.get(), answer=values, product_set=self.product_set, traffic_set=self.traffic_set, purchased_set=self.purchased_set)
         self.question_set = set(algo_utils.get_questions(self.product_set))
 
         self.final_question_list.append(int(self.question.get()))
-        print("Length Product set: {}".format(len(self.product_set)))#For debugging
+        print("Length Product set: {}".format(len(self.product_set)))
         question_set_new = set(algo_utils.get_questions(self.product_set))
-        print("Length Question set new: {}".format(len(question_set_new)))#For debugging
-        print("Length Final question list: {}".format(len(self.final_question_list))) #For debugging
+        print("Length Question set new: {}".format(len(question_set_new)))
+        print("Length Final question list: {}".format(len(self.final_question_list)))
         self.question_set = question_set_new.difference(self.final_question_list)
         print("Question set: {}".format(self.question_set))
 
-        # Getting next question from our algo's opt_step # TODO Modify update step for other algorithm
+        # Getting next question from our algo's opt_step
         if self.use=='maxMI':
             self.next_question = opt_step(self.question_set, 
                                      self.product_set, 
@@ -233,11 +239,7 @@ class MyApplication(Frame):
         self.mainframe.destroy()
 
 if __name__ == '__main__':
-
-    from utils.load_utils import load_obj
-    from utils.sampler import sample_answers
-
-
+    """ Run the application. """
     try:
         products_cat = load_obj('../data/products_table')
         traffic_cat = load_obj('../data/traffic_table')
@@ -257,9 +259,15 @@ if __name__ == '__main__':
         print("Created history")
         print("Loaded datasets")
     threshold = 50
-
-    print(products_cat["PropertyDefinitionId"].unique())
-
-
-    app = MyApplication(products_cat, traffic_cat, purchased_cat, question_text_df, answer_text_df, threshold, filters_def_dict, type_filters)
+    
+    # Init application
+    app = MyApplication(products_cat, 
+                        traffic_cat,
+                        purchased_cat,
+                        question_text_df,
+                        answer_text_df,
+                        threshold,
+                        filters_def_dict,
+                        type_filters)
+    # Start the application
     app.run()
