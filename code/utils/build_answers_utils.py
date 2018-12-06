@@ -6,6 +6,10 @@ Mélanie Bernhardt - Mélanie Gaillochet - Laura Manduchi
 
 This file contains all helper functions for init_dataframes.
 """
+import sys
+import os.path
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 
 import pandas as pd
 import numpy as np
@@ -403,7 +407,10 @@ def question_id_to_text(question, question_df):
     try:
         question_text = question_df.loc[question_df["PropertyDefinitionId"] == str(int(float(question))), "PropertyDefinition"].values[0]
     except IndexError:
-        question_text = 'No text equivalent for question'
+        try:
+            question_text = question_df.loc[question_df["PropertyDefinitionId"] == int(float(question)), "PropertyDefinition"].values[0]
+        except IndexError:
+            question_text = 'No text equivalent for question'
     return question_text
 
 def question_text_to_id(question_text, question_df):
