@@ -24,17 +24,19 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 """ 
 This module runs DAgger Algorithm
     1) Get initial dataset of trajectories from the teacher
-    2) Train a policy that best mimics the expert on those trajectories
+    2) Train a initial policy that best mimics the expert on those trajectories
     3) At each iteration, collect more trajectories (teacher's output state given previous states in network) 
        and adds those trajectories to the dataset
     4) Train the network again to find the policy that best mimics the teacher on the aggregated dataset
 
-The results file can be found in the training_dagger/cp.ckpt folder. 
+The results file can be found in the training_dagger/cp.ckpt folder.
+
+More details about the DAgger algorithm can be found on the report. 
 """
 # ============= PARAMETERS ========== #
 
 # Data loading parameters
-tf.flags.DEFINE_string("run_name", None, "Run name to save (default: none)")
+tf.flags.DEFINE_string("run_name", None, "Custom run name to save (default: none)")
 tf.flags.DEFINE_integer("threshold", 50, "Length of the final subset of products (default: 50")
 tf.flags.DEFINE_integer("in_maxMI_size", 1000, "Initial number of products to run maxMI algorithm on (default:1000)")
 
@@ -43,16 +45,16 @@ tf.flags.DEFINE_integer("batch_size", 128, "Batch Size (default: 32)")
 tf.flags.DEFINE_float("val_split", 0.2, "Fraction used for validation during training (default: 0.1)")
 tf.flags.DEFINE_integer("n_epochs", 50, "Number of epochs during secondary training")
 tf.flags.DEFINE_integer("n_epochs_init", 100, "Number of init epochs (default: 1000)")
-tf.flags.DEFINE_integer("n_episodes", 3000, "Number of episodes (default: 500)")
-tf.flags.DEFINE_integer("h1", 256, "Number of hidden units (default: 256)")
-tf.flags.DEFINE_integer("h2", 128, "Number of hidden units layer 2 (default: 128)")
-#tf.flags.DEFINE_integer("checkpoint_every", 100, "checkpoint every")
+tf.flags.DEFINE_integer("n_episodes", 2001, "Number of episodes (default: 2000 i.e. 10*200)")
+tf.flags.DEFINE_integer("h1", 2048, "Number of hidden units first hidden layer (default: 2048)")
+tf.flags.DEFINE_integer("h2", 1024, "Number of hidden units second hidden layer (default: 1024)")
 
-# Tensorflow Parameters
+# Tensorflow parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
 
 FLAGS = tf.flags.FLAGS
+
 """Printing model configuration to command line"""
 print("\nParameters:")
 for attr, value in sorted(FLAGS.__flags.items()):
@@ -70,23 +72,7 @@ try:
     answer_text = load_obj('../data/answer_text')
     print("Loaded datasets")
 except:
-    print("Creating datasets...")
-    products_cat, traffic_cat, purchased_cat, filters_def_dict, type_filters, question_text_df, answer_text = init_df()
-    save_obj(products_cat, '../data/products_table')
-    save_obj(traffic_cat, '../data/traffic_table')
-    save_obj(purchased_cat, '../data/purchased_table')
-    save_obj(type_filters, '../data/type_filters')
-    save_obj(question_text_df, '../data/question_text_df')
-    save_obj(answer_text, '../data/answer_text')
-    print("Created datasets")
-
-# Dowloading history for prior
-try:
-    df_history = load_obj('../data/df_history')
-except:
-    df_history = utils.algo_utils.create_history(traffic_cat, question_text_df)
-    save_obj(df_history, '../data/df_history')
-    print("Created history")
+    print("Create the datasets first...")
 
 # ============= GETTING TEACHER DATA ========== #
 print("#"*50) #
@@ -101,7 +87,14 @@ try:
 except:
     # Run MaxMI and get the output set of (state, question) for number of products defined in flags (default: 200)
     print("Data not found; teacher is creating it \n")
-
+    # Downloading history for prior of the teacher
+    try:
+        df_history = load_obj('../data/df_history')
+    except:
+        df_history = utils.algo_utils.create_history(traffic_cat, question_text_df)
+        save_obj(df_history, '../data/df_history')
+        print("Created history")
+    
     # Get question list and state_list of the form : {"q1":[a1,a2], "q2":[a3], "q3":[a4, a6] ..}
     # Use history
     a_hist=1
@@ -121,6 +114,8 @@ except:
     tl.files.save_any_to_npy(save_dict={'state_list': state_list, 'act': question_list}, name='_tmp.npy')
     print('Saved teacher data')
 
+
+
 # ============= SETTING UP CHECKPOINT DIRECTORY ========== #
 # Set up output directory for models and summaries
 if FLAGS.run_name is None:
@@ -137,9 +132,9 @@ checkpoint_dir = os.path.dirname(checkpoint_path)
 
 # Create checkpoint callback for later saving of the model
 cp_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_path, 
-                                                    save_weights_only=True,
-                                                    verbose=1,
-                                                    period=1)
+                                                save_weights_only=True,
+                                                verbose=1,
+                                                period=1)
 
 
 # ============= TRAINING WITH INITIAL TEACHER DATA ========== #
@@ -165,7 +160,7 @@ for state in state_list:
     onehot_state_list.append(np.asarray(onehot_state))
     mask_list.append(mask)
 
-# Convert to array
+# Convert to numpy arrays
 one_hot_state_list = np.asarray(onehot_state_list)
 mask_list = np.asarray(mask_list)
 length_state = np.size(onehot_state_list[0])
@@ -173,17 +168,17 @@ length_state = np.size(onehot_state_list[0])
 print('Length of the one-hot state vector is {}'.format(length_state))
 print('Total number of initial (state, question) training pairs is {}'.format(len(onehot_state_list)))
 
-# Model definition
+# Model initialization
 print('Init model')
 model = create_model(number_filters, length_state, h1 = FLAGS.h1, h2=FLAGS.h2)
 
 # Print summary of parameters
 model.summary()
 
-# Early stopping
-cp_early = tf.keras.callbacks.EarlyStopping(
-        monitor='val_acc', patience=4)
-# Fit the model
+# Definie early stopping callback
+cp_early = tf.keras.callbacks.EarlyStopping(monitor='val_acc', patience=4)
+
+# Initial training of the model
 model_history = model.fit([one_hot_state_list, mask_list],
                             one_ind_labels,
                             epochs=FLAGS.n_epochs_init,
@@ -193,44 +188,38 @@ model_history = model.fit([one_hot_state_list, mask_list],
                             verbose=2,
                             callbacks=[cp_callback, cp_early])
 
-# For the plots
+# History saving for initial plots
 model_history_train_loss = model_history.history['loss']
 model_history_val_loss = model_history.history['val_loss']
 model_history_train_acc = model_history.history['acc']
 model_history_val_acc = model_history.history['val_acc']
 model_history_epochs = model_history.epoch
+x_breaks = [len(model_history_epochs)]
 
-plt.figure(figsize=(16,10))
-val = plt.plot(model_history_epochs, model_history_val_loss,'--', label='Validation set'.title())
-plt.plot(model_history_epochs, model_history_train_loss, color=val[0].get_color(), label='Training set'.title())
-plt.xlabel('Epochs')
-plt.ylabel('Loss'.title())
-plt.legend()
-plt.xlim([0,max(model_history_epochs)])
-plt.savefig(checkpoint_dir+"/loss-Init.png", dpi=300)
+# Loss
+dagger_utils.plot_history(len(model_history_epochs), 
+            model_history_val_loss, 
+            model_history_train_loss, 
+            x_breaks, 
+            'Cross-entropy loss', 
+            filename= checkpoint_dir+"/loss-Init.png")
 
-plt.figure(figsize=(16,10))
-val = plt.plot(model_history_epochs, model_history_val_acc,'--', label='Validation set'.title())
-plt.plot(model_history_epochs, model_history_train_acc, color=val[0].get_color(), label='Training set'.title())
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy'.title())
-plt.legend()
-plt.xlim([0,max(model_history_epochs)])
-plt.savefig(checkpoint_dir+"/acc-Init.png", dpi=300)
+# Accuracy
+dagger_utils.plot_history(len(model_history_epochs), 
+            model_history_val_acc, 
+            model_history_train_acc, 
+            x_breaks, 
+            'Accuracy', 
+            filename= checkpoint_dir+"/acc-Init.png")
 
-# plt.show()  # If show the plot, must manually close the window to resume the execution of the program
-print(model_history.history.keys())
 
 # ============= COLLECT MORE DATA (EXPLORING NEW STATES) & RETRAIN NETWORK AT EACH EPISODE ========== #
 output_file = open(checkpoint_dir+'/results.txt', 'w')
 n_episodes = FLAGS.n_episodes
 
 for episode in range(n_episodes):
-
     # Get latest checkpoint of the network
-    # latest = tf.train.latest_checkpoint(checkpoint_dir+'/')  #TODO does not work apparently, try to find solution once start training
     print('Loading the latest model')
-    # use latest checkpoint manually
     latest = out_dir+'/cp.ckpt' 
     
     # Restore the model from the checkpoint
@@ -246,15 +235,19 @@ for episode in range(n_episodes):
     
     # Sample the possible answers for this product:
     # Creates a dictionary of the form {'q1': [a1], 'q2': [a2, a3], etc.}
-    answers_y = sampler.sample_answers(y, products_cat, p_idk=0.1, p_2a=0.1, p_3a=0.1)
-    state = {}  # Initial state
+    answers_y = sampler.sample_answers(y, products_cat, p_idk=0.0, p_2a=0.2, p_3a=0.1)
+    
+    # Initialize the state
+    state = {}  
 
-    # Loop until obtain all possible states (until # products in products set < threshold)
+    # Loop until until # products in products set < threshold
     while True: 
         # Get list of questions already asked
         question_asked = state.keys()
+        
         # Convert to one-hot
         one_ind_questions_asked = dagger_utils.get_index_question(question_asked, filters_def_dict)
+        
         # Create the mask before the softmax layer (cannot ask twice the same question)
         mask = np.ones(number_filters)
         for q in one_ind_questions_asked:  # If question was already asked, set corresponding mask value to 0
@@ -300,10 +293,8 @@ for episode in range(n_episodes):
     print("#" * 50)
     output_file.write('Episode: %02d\t Number or questions: %02d\n' % (episode, len(state)))
     
-    # Retrain the model with the new data at the end of the episode
-    # Only retrain every 500 episodes
-    if episode % 200==0:
-        # Last state is not relevant for training, since no predicted next state (question)
+    # Retrain the model with the new data every 200 episodes
+    if episode % 1==0: #TODO 200
         model_history = model.fit([one_hot_state_list, mask_list],
                                     one_ind_labels,
                                     epochs=FLAGS.n_epochs,
@@ -311,30 +302,28 @@ for episode in range(n_episodes):
                                     validation_split=FLAGS.val_split,
                                     verbose=2,
                                     callbacks=[cp_callback, cp_early])
-    
+        # New plots
         model_history_epochs = np.append(model_history_epochs, model_history.epoch)
+        x_breaks.append(len(model_history_epochs))
         model_history_train_loss = np.append(model_history_train_loss, model_history.history['loss'])
         model_history_val_loss = np.append(model_history_val_loss, model_history.history['val_loss'])
         model_history_train_acc = np.append(model_history_train_acc, model_history.history['acc'])
         model_history_val_acc = np.append(model_history_val_acc, model_history.history['val_acc'])
-
         plt.clf()
-        plt.figure(figsize=(16,10))
-        val = plt.plot(model_history_epochs, model_history_val_loss,'--', label='Validation set'.title())
-        plt.plot(model_history_epochs, model_history_train_loss, color=val[0].get_color(), label='Training set'.title())
-        plt.xlabel('Epochs')
-        plt.ylabel('Loss'.title())
-        plt.legend()
-        plt.xlim([0,max(model_history_epochs)])
-        plt.savefig(checkpoint_dir+"/loss-E{}.png".format(episode), dpi=300)
+        # Loss
+        dagger_utils.plot_history(len(model_history_epochs), 
+                    model_history_val_loss, 
+                    model_history_train_loss, 
+                    x_breaks, 
+                    'Cross-entropy loss', 
+                    filename= checkpoint_dir+"/loss-E{}.png".format(episode))
 
-        plt.clf()
-        plt.figure(figsize=(16,10))
-        val = plt.plot(model_history_epochs, model_history_val_acc,'--', label='Validation set'.title())
-        plt.plot(model_history_epochs, model_history_train_acc, color=val[0].get_color(), label='Validation set'.title())
-        plt.xlabel('Epochs')
-        plt.ylabel('Accuracy'.title())
-        plt.legend()
-        plt.xlim([0,max(model_history_epochs)])
-        plt.savefig(checkpoint_dir+"/acc-E{}.png".format(episode), dpi=300)
+        # Accuracy
+        dagger_utils.plot_history(len(model_history_epochs), 
+                    model_history_val_acc, 
+                    model_history_train_acc, 
+                    x_breaks, 
+                    'Accuracy', 
+                    filename= checkpoint_dir+"/acc-E{}.png".format(episode))
+
 
