@@ -8,7 +8,11 @@ import tensorlayer as tl
 import numpy as np
 import time
 import warnings
-import matplotlib.pyplot as plt 
+import matplotlib as mpl
+if os.environ.get('DISPLAY','') == '':
+    print('no display found. Using non-interactive Agg backend')
+    mpl.use('Agg')
+import matplotlib.pyplot as plt
 
 import dagger.dagger_utils as dagger_utils
 from utils.init_dataframes import init_df
@@ -41,11 +45,13 @@ tf.flags.DEFINE_integer("in_maxMI_size", 1000, "Initial number of products to ru
 # Test parameters
 tf.flags.DEFINE_integer("batch_size", 128, "Batch Size (default: 32)")
 tf.flags.DEFINE_float("val_split", 0.2, "Fraction used for validation during training (default: 0.1)")
-tf.flags.DEFINE_integer("n_epochs", 50, "Number of epochs during secondary training")
-tf.flags.DEFINE_integer("n_epochs_init", 100, "Number of init epochs (default: 1000)")
-tf.flags.DEFINE_integer("n_episodes", 3000, "Number of episodes (default: 500)")
-tf.flags.DEFINE_integer("h1", 256, "Number of hidden units (default: 256)")
-tf.flags.DEFINE_integer("h2", 128, "Number of hidden units layer 2 (default: 128)")
+tf.flags.DEFINE_integer("n_epochs", 100, "Number of epochs during secondary training")
+tf.flags.DEFINE_integer("n_epochs_init", 500, "Number of init epochs (default: 1000)")
+tf.flags.DEFINE_integer("n_episodes", 500, "Number of episodes (default: 500)")
+tf.flags.DEFINE_integer("h1", 1024, "Number of hidden units (default: 256)")
+tf.flags.DEFINE_integer("h2", 512, "Number of hidden units layer 2 (default: 128)")
+tf.flags.DEFINE_integer("h3", 256, "Number of hidden units layer 3 (default: 128)")
+tf.flags.DEFINE_integer("h4", 128, "Number of hidden units layer 4 (default: 128)")
 #tf.flags.DEFINE_integer("checkpoint_every", 100, "checkpoint every")
 
 # Tensorflow Parameters
@@ -125,7 +131,7 @@ except:
 # Set up output directory for models and summaries
 if FLAGS.run_name is None:
     timestamp = str(int(time.time()))
-    out_dir = os.path.abspath(os.path.join(os.path.curdir, "../training_dagger/h1{}_h2{}_ts{}".format(FLAGS.h1, FLAGS.h2,timestamp)))
+    out_dir = os.path.abspath(os.path.join(os.path.curdir, "../training_dagger/h1_{}_h2_{}_h3_{}_h4_{}_ts{}".format(FLAGS.h1, FLAGS.h2, FLAGS.h3, FLAGS.h4, timestamp)))
 else:
     out_dir = os.path.abspath(os.path.join(os.path.curdir, "../training_dagger/", FLAGS.run_name))
 if not os.path.exists(out_dir):
@@ -175,7 +181,7 @@ print('Total number of initial (state, question) training pairs is {}'.format(le
 
 # Model definition
 print('Init model')
-model = create_model(number_filters, length_state, h1 = FLAGS.h1, h2=FLAGS.h2)
+model = create_model(number_filters, length_state, h1 = FLAGS.h1, h2=FLAGS.h2, h3=FLAGS.h3, h4=FLAGS.h4)
 
 # Print summary of parameters
 model.summary()
@@ -234,7 +240,7 @@ for episode in range(n_episodes):
     latest = out_dir+'/cp.ckpt' 
     
     # Restore the model from the checkpoint
-    model = create_model(number_filters, length_state, h1=FLAGS.h1, h2=FLAGS.h2)
+    model = create_model(number_filters, length_state, h1=FLAGS.h1, h2=FLAGS.h2,  h3=FLAGS.h3, h4=FLAGS.h4)
     model.load_weights(latest)
     
     # Start the imitation learning
