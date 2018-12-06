@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-This file is used to extract data from the Digitec database and to preprocess it.
+""" Data Science Lab Project - FALL 2018
+Mélanie Bernhardt - Mélanie Gaillochet - Laura Manduchi
+
+This file is used to extract data from the database and to preprocess it.
 It saves the needed dataframes.
 """
 import sys
