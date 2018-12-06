@@ -8,11 +8,13 @@ for imitation learning. Helper file for dagger_train.py
 
 import sys
 import os.path
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
 from tensorflow import keras
 import tensorflow as tf
 
-# To import from sibling directory ../utils
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
 
 def create_model(number_filters, length_state, h1=2048, h2=1024, h3=512, h4=256):
         """ This functions defines initializes the model.

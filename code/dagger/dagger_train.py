@@ -15,6 +15,9 @@ More details about the DAgger algorithm can be found on the report.
 
 import sys
 import os.path
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
 import time
 import warnings
 
@@ -31,8 +34,6 @@ import utils.sampler as sampler
 from utils.load_utils import load_obj, save_obj
 from dagger.model import create_model
 
-# To import from sibling directory ../utils
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 # To remove future warning from being printed out
 warnings.simplefilter(action='ignore', category=FutureWarning)
 

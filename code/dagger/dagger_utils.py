@@ -9,6 +9,8 @@ This file contains all the necessary helper functions for:
 
 import sys
 import os.path
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..") 
 import time
 import warnings
 
@@ -22,8 +24,6 @@ import greedy.MaxMI_Algo as MaxMI
 from utils.sampler import sample_answers
 from utils.build_answers_utils import question_id_to_text, answer_id_to_text
 
-# To import from sibling directory ../utils
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")   
 
 def get_products(state, product_set, traffic_set=[], purchased_set=[]):
     """ Update the data tables from the state dict
