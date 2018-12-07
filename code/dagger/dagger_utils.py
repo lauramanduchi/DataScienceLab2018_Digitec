@@ -266,7 +266,7 @@ def plot_history(epochs, metric_history_val, metric_history_train, x_breaks, tit
     plt.ylabel(title.title(), fontsize=16)
     plt.legend(fontsize = 16)
     plt.xlim([1, epochs])
-    plt.xticks(np.arange(1, epochs+1), fontsize=12)
+    plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
     plt.savefig(filename, dpi=300)
 
