@@ -306,7 +306,7 @@ for episode in range(n_episodes):
     output_file.write('Episode: %02d\t Number or questions: %02d\n' % (episode, len(state)))
     
     # Retrain the model with the new data every 200 episodes
-    if episode % 200==0:
+    if (episode % 200==0 and (not episode==0)):
         model_history = model.fit([one_hot_state_list, mask_list],
                                     one_ind_labels,
                                     epochs=FLAGS.n_epochs,
