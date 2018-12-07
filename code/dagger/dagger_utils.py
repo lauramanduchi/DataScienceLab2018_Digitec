@@ -256,16 +256,18 @@ def plot_history(epochs, metric_history_val, metric_history_train, x_breaks, tit
         filename: filename to save the plot.
     """
     plt.figure(figsize=(16,10))
-    plt.plot(np.arange(1, epochs+1), metric_history_val,'--', color='b', label='Validation set'.title())
-    plt.plot(np.arange(1, epochs+1), metric_history_train, color='b', label='Training set'.title())
+    plt.style.use('dark_background')
+    #plt.set_facecolor('k')
+    plt.plot(np.arange(1, epochs+1), metric_history_val,'--', color='lightskyblue', linewidth=3, label='Validation set'.title())
+    plt.plot(np.arange(1, epochs+1), metric_history_train, color='lightskyblue', linewidth=3, label='Training set'.title())
     for xc in x_breaks:
-        plt.axvline(x=xc, linestyle='--', color='k', linewidth=0.5)
-    plt.xlabel('Epochs')
-    plt.ylabel(title.title())
-    plt.title(title.title())
-    plt.legend()
+        plt.axvline(x=xc, linestyle='--', color='white', linewidth=0.5)
+    plt.xlabel('Epochs', fontsize=16)
+    plt.ylabel(title.title(), fontsize=16)
+    plt.legend(fontsize = 16)
     plt.xlim([1, epochs])
-    plt.xticks(np.arange(1, epochs+1))
+    plt.xticks(np.arange(1, epochs+1), fontsize=12)
+    plt.yticks(fontsize=12)
     plt.savefig(filename, dpi=300)
 
 def dagger_get_questions(y, answers_y, model, question_text_df, answer_text_df, filters_def_dict, products_cat, number_filters):
