@@ -104,14 +104,13 @@ except:
     print("Created datasets")
 
 df_history = 0
-if a_hist > 0 and use=='MaxMI':
+if a_hist > 0 and use=='maxMI':
     try:
         df_history = load_obj('../data/df_history')
     except:
         df_history = algo_utils.create_history(traffic_cat, question_text_df)
         save_obj(df_history, '../data/df_history')
         print("Created history")
-
 
 # ============= INITIALIZE VARIABLES ========== #
 if use=='maxMI':
