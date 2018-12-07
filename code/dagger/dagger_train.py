@@ -26,6 +26,7 @@ import tensorflow as tf
 import tensorlayer as tl
 import numpy as np
 import matplotlib.pyplot as plt
+import parmap
 
 import dagger.dagger_utils as dagger_utils
 import utils.algo_utils as algo_utils
@@ -154,23 +155,28 @@ print('Converting state to one hot encoding..')
 onehot_state_list = []
 mask_list = []
 
-# Create a mask list to prevent the network from asking the same questions
-for state in state_list:
+
+#for state in state_list:
+def get_state_ready(state):
+    # Get one hot state
+    onehot_state = dagger_utils.get_onehot_state(state, filters_def_dict)
+    return np.asarray(onehot_state)
+
+def get_mask_ready(state):
     question_asked = state.keys()
     one_ind_questions_asked = dagger_utils.get_index_question(question_asked, filters_def_dict)
     mask = np.ones(number_filters)
     for q in one_ind_questions_asked:  # If question was already asked, set corresponding mask value to 0
         mask[q] = 0
-    # Get one hot state
-    onehot_state = dagger_utils.get_onehot_state(state, filters_def_dict)
-    onehot_state_list.append(np.asarray(onehot_state))
-    mask_list.append(mask)
+    return mask 
+
+
+one_hot_state_list = np.asarray(parmap.map(get_state_ready, state_list, pm_pbar=True))
+mask_list = np.asarray(parmap.map(get_mask_ready, state_list, pm_pbar=True))
 
 # Convert to numpy arrays
-one_hot_state_list = np.asarray(onehot_state_list)
-mask_list = np.asarray(mask_list)
-length_state = np.size(onehot_state_list[0])
-
+length_state = np.size(one_hot_state_list[0])
+print(np.shape(np.reshape(one_hot_state_list,(-1,length_state))))
 print('Length of the one-hot state vector is {}'.format(length_state))
 print('Total number of initial (state, question) training pairs is {}'.format(len(onehot_state_list)))
 
