@@ -92,9 +92,10 @@ def get_next_question_opt(state, product_set, traffic_set, purchased_set, thresh
                                                            purchased_set)
     n = len(np.unique(product_set["ProductId"]))
     print('remaining prod {}'.format(n))
-    question_set_new = set(algo_utils.get_questions(product_set)) 
+    all_questions = set([float(q) for q in algo_utils.get_questions(product_set)])
+    question_asked = [float(s) for s in state.keys()]
     # state keys is the list of questions asked 
-    question_set = question_set_new.difference(state.keys()) 
+    question_set = all_questions.difference(question_asked)
     if n < threshold :
         # the remaining product_set is smaller than threshold
         done = True  
@@ -320,7 +321,12 @@ def dagger_get_questions(y, answers_y, model, question_text_df, answer_text_df, 
         mask = np.reshape(mask, (1, -1))
         # Get predicted question from model for current state
         # Predict the one-hot label
-        probas = model.predict({'main_input': onehot_state, 'mask_input': mask})[0]  
+        probas = model.predict({'main_input': onehot_state, 'mask_input': mask})[0]
+        # if all the questions have already been ask
+        # i.e. all have proba 0 then break 
+        # even if not reached threshold
+        if np.sum(probas)==0:
+            break  
         onehot_prediction = np.argmax(probas)
         # Get the number of predicted next question
         q_pred = sorted(filters_def_dict.keys())[onehot_prediction]  
