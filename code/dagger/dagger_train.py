@@ -294,6 +294,8 @@ for episode in range(n_episodes):
         # Get predicted question from model for current state
         probas = model.predict({'main_input': onehot_state, 'mask_input': mask})[0]  # Predict the one-hot label
         print(probas)
+        if np.sum(probas)==0:
+            break
         onehot_prediction = np.argmax(probas)
         q_pred = sorted(filters_def_dict.keys())[onehot_prediction]  # Get the number of predicted next question
         
