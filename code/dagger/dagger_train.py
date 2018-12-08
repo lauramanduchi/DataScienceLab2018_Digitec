@@ -228,15 +228,16 @@ dagger_utils.plot_history(len(model_history_epochs),
 # ============= COLLECT MORE DATA (EXPLORING NEW STATES) & RETRAIN NETWORK AT EACH EPISODE ========== #
 output_file = open(checkpoint_dir+'/results.txt', 'w')
 n_episodes = FLAGS.n_episodes
+# Get latest checkpoint of the network
+print('Loading the latest model')
+latest = out_dir+'/cp.ckpt' 
+
+# Restore the model from the checkpoint
+model = create_model(number_filters, length_state, h1=FLAGS.h1, h2=FLAGS.h2,  h3=FLAGS.h3, h4=FLAGS.h4)
+model.load_weights(latest)
 
 for episode in range(n_episodes):
-    # Get latest checkpoint of the network
-    print('Loading the latest model')
-    latest = out_dir+'/cp.ckpt' 
-    
-    # Restore the model from the checkpoint
-    model = create_model(number_filters, length_state, h1=FLAGS.h1, h2=FLAGS.h2,  h3=FLAGS.h3, h4=FLAGS.h4)
-    model.load_weights(latest)
+
     
     # Start the imitation learning
     print("#" * 50)
@@ -339,5 +340,11 @@ for episode in range(n_episodes):
                     x_breaks, 
                     'Accuracy', 
                     filename= checkpoint_dir+"/acc-E{}.png".format(episode))
+        # Get latest checkpoint of the network
+        print('Loading the updated model')
+        latest = out_dir+'/cp.ckpt' 
+        model = create_model(number_filters, length_state, h1=FLAGS.h1, h2=FLAGS.h2,  h3=FLAGS.h3, h4=FLAGS.h4)
+        model.load_weights(latest)
+
 
 
