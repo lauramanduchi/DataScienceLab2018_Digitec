@@ -314,6 +314,7 @@ for episode in range(n_episodes):
                                     one_ind_labels,
                                     epochs=FLAGS.n_epochs,
                                     batch_size=FLAGS.batch_size,
+                                    shuffle=True,
                                     validation_split=FLAGS.val_split,
                                     verbose=2,
                                     callbacks=[cp_callback, cp_early])
