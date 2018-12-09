@@ -190,9 +190,10 @@ model.summary()
 # Definie early stopping callback
 cp_early = tf.keras.callbacks.EarlyStopping(monitor='val_acc', patience=4)
 
+p = np.random.permutation(len(one_hot_state_list))
 # Initial training of the model
-model_history = model.fit([one_hot_state_list, mask_list],
-                            one_ind_labels,
+model_history = model.fit([one_hot_state_list[p], mask_list[p]],
+                            one_ind_labels[p],
                             epochs=FLAGS.n_epochs_init,
                             batch_size=FLAGS.batch_size,
                             shuffle=True,
@@ -301,6 +302,8 @@ for episode in range(n_episodes):
         q_pred = sorted(filters_def_dict.keys())[onehot_prediction]  # Get the number of predicted next question
         
         # Update (answer) state according to that prediction
+        print(answers_y)
+        print(q_pred)
         answers_to_pred = answers_y.get(float(q_pred))  # Get answer (from randomly sample product) to chosen question
         state[q_pred] = list(answers_to_pred)
         print(state)
@@ -310,8 +313,9 @@ for episode in range(n_episodes):
     
     # Retrain the model with the new data every 200 episodes
     if (episode % 200==0 and (not episode==0)):
-        model_history = model.fit([one_hot_state_list, mask_list],
-                                    one_ind_labels,
+        p = np.random.permutation(len(one_hot_state_list))
+        model_history = model.fit([one_hot_state_list[p], mask_list[p]],
+                                    one_ind_labels[p],
                                     epochs=FLAGS.n_epochs,
                                     batch_size=FLAGS.batch_size,
                                     shuffle=True,
