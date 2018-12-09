@@ -27,7 +27,7 @@ import tensorlayer as tl
 import numpy as np
 import matplotlib.pyplot as plt
 import parmap
-
+from sklearn.model_selection import train_test_split
 import dagger.dagger_utils as dagger_utils
 import utils.algo_utils as algo_utils
 import utils.sampler as sampler
@@ -191,13 +191,15 @@ model.summary()
 cp_early = tf.keras.callbacks.EarlyStopping(monitor='val_acc', patience=4)
 
 p = np.random.permutation(len(one_hot_state_list))
+state_train, state_test, mask_train, mask_test, y_train, y_test = train_test_split(one_hot_state_list, mask_list, one_ind_labels, test_size=0.2, random_state=42)
+
 # Initial training of the model
-model_history = model.fit([one_hot_state_list[p], mask_list[p]],
-                            one_ind_labels[p],
+model_history = model.fit([state_train, mask_train],
+                            y_train,
                             epochs=FLAGS.n_epochs_init,
                             batch_size=FLAGS.batch_size,
                             shuffle=True,
-                            validation_split=FLAGS.val_split, 
+                            validation_data=([state_test, mask_test], y_test), 
                             verbose=2,
                             callbacks=[cp_callback, cp_early])
 
@@ -237,6 +239,10 @@ latest = out_dir+'/cp.ckpt'
 model = create_model(number_filters, length_state, h1=FLAGS.h1, h2=FLAGS.h2,  h3=FLAGS.h3, h4=FLAGS.h4)
 model.load_weights(latest)
 
+# buffer for new data
+buffer_state = []
+buffer_mask = []
+buffer_question = []
 for episode in range(n_episodes):
 
     
@@ -286,10 +292,14 @@ for episode in range(n_episodes):
                 onehot_state = np.reshape(onehot_state, (1, -1))
                 mask = np.reshape(mask, (1, -1))
                 # Append the new state s(t) to the training_set
-                one_hot_state_list = np.concatenate((one_hot_state_list, onehot_state))
-                mask_list = np.concatenate((mask_list, mask))
+                if buffer_state == []:
+                    buffer_state = onehot_state
+                    buffer_mask = mask
+                else:
+                    buffer_state = np.concatenate((buffer_state, onehot_state))
+                    buffer_mask = np.concatenate((buffer_mask, mask))
                 one_ind_question = dagger_utils.get_index_question([q_true], filters_def_dict)[0]
-                one_ind_labels = np.append(one_ind_labels, one_ind_question)
+                buffer_question = np.append(buffer_question, one_ind_question)
         
         onehot_state = np.reshape(onehot_state, (1, -1))
         mask = np.reshape(mask, (1, -1))
@@ -302,8 +312,6 @@ for episode in range(n_episodes):
         q_pred = sorted(filters_def_dict.keys())[onehot_prediction]  # Get the number of predicted next question
         
         # Update (answer) state according to that prediction
-        print(answers_y)
-        print(q_pred)
         answers_to_pred = answers_y.get(float(q_pred))  # Get answer (from randomly sample product) to chosen question
         state[q_pred] = list(answers_to_pred)
         print(state)
@@ -313,13 +321,23 @@ for episode in range(n_episodes):
     
     # Retrain the model with the new data every 200 episodes
     if (episode % 200==0 and (not episode==0)):
-        p = np.random.permutation(len(one_hot_state_list))
-        model_history = model.fit([one_hot_state_list[p], mask_list[p]],
-                                    one_ind_labels[p],
+        buffer_state_train, buffer_state_test, buffer_mask_train, buffer_mask_test, buffer_y_train, buffer_y_test = train_test_split(buffer_state,
+                                                                                                                    buffer_mask, 
+                                                                                                                    buffer_question, 
+                                                                                                                    test_size=0.2,
+                                                                                                                    random_state=42)
+        state_train = np.concatenate((buffer_state_train, state_train))
+        state_test = np.concatenate((buffer_state_test, state_test))
+        mask_train = np.concatenate((buffer_mask_train, mask_train))
+        mask_test = np.concatenate((buffer_mask_test, mask_test))
+        y_train = np.concatenate((buffer_y_train, y_train))
+        y_test = np.concatenate((buffer_y_test, y_test))
+        model_history = model.fit([state_train, mask_train],
+                                    y_train,
                                     epochs=FLAGS.n_epochs,
                                     batch_size=FLAGS.batch_size,
                                     shuffle=True,
-                                    validation_split=FLAGS.val_split,
+                                    validation_data=([state_test, mask_test], y_test),
                                     verbose=2,
                                     callbacks=[cp_callback, cp_early])
         # New plots
