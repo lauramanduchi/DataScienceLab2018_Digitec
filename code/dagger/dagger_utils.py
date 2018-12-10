@@ -96,7 +96,7 @@ def get_next_question_opt(state, product_set, traffic_set, purchased_set, thresh
     question_asked = [float(s) for s in state.keys()]
     # state keys is the list of questions asked 
     question_set = all_questions.difference(question_asked)
-    if n < threshold :
+    if ((n < threshold) or (len(question_set)==0)) :
         # the remaining product_set is smaller than threshold
         done = True  
         next_question = 0
