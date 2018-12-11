@@ -320,7 +320,7 @@ for episode in range(n_episodes):
     output_file.write('Episode: %02d\t Number or questions: %02d\n' % (episode, len(state)))
     
     # Retrain the model with the new data every 200 episodes
-    if (episode % 200==0 and (not episode==0)):
+    if (episode % 50==0 and (not episode==0)): #TODO change
         buffer_state_train, buffer_state_test, buffer_mask_train, buffer_mask_test, buffer_y_train, buffer_y_test = train_test_split(buffer_state,
                                                                                                                     buffer_mask, 
                                                                                                                     buffer_question, 
@@ -340,6 +340,9 @@ for episode in range(n_episodes):
                                     validation_data=([state_test, mask_test], y_test),
                                     verbose=2,
                                     callbacks=[cp_callback, cp_early])
+        buffer_mask = []
+        buffer_state = []
+        buffer_question = []
         # New plots
         model_history_epochs = np.append(model_history_epochs, model_history.epoch)
         x_breaks.append(len(model_history_epochs))
