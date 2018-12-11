@@ -54,7 +54,7 @@ class MyApplication(Frame):
             print('Loading the latest model from {}'.format(checkpoint_model))
             self.length_state = len(dagger_utils.get_onehot_state({}, filters_def_dict))
             self.number_filters = len(filters_def_dict.keys())
-            self.model = create_model(self.number_filters, self.length_state, h1=128, h2=122)
+            self.model = create_model(self.number_filters, self.length_state)
             self.model.load_weights(checkpoint_model)
             self.state = {}
 
