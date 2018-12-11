@@ -46,6 +46,7 @@ tf.flags.DEFINE_integer("threshold", 50, "Length of the final subset of products
 tf.flags.DEFINE_integer("in_maxMI_size", 1000, "Initial number of products to run maxMI algorithm on (default:1000)")
 
 # Test parameters
+tf.flags.DEFINE_boolean("use_DAgger", False, "Whether to use DAgger (i.e. retrain iteratively) or simple training on initial training set")
 tf.flags.DEFINE_integer("batch_size", 128, "Batch Size (default: 32)")
 tf.flags.DEFINE_float("val_split", 0.2, "Fraction used for validation during training (default: 0.1)")
 tf.flags.DEFINE_integer("n_epochs", 50, "Max number of epochs during secondary training")
@@ -55,6 +56,7 @@ tf.flags.DEFINE_integer("h1", 2048, "Number of hidden units first hidden layer (
 tf.flags.DEFINE_integer("h2", 1024, "Number of hidden units second hidden layer (default: 1024)")
 tf.flags.DEFINE_integer("h3", 512, "Number of hidden units layer 3 (default: 512)")
 tf.flags.DEFINE_integer("h4", 256, "Number of hidden units layer 4 (default: 256)")
+
 
 # Tensorflow parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
@@ -227,150 +229,150 @@ dagger_utils.plot_history(len(model_history_epochs),
             'Accuracy', 
             filename= checkpoint_dir+"/acc-Init.png")
 
+if FLAGS.use_DAgger:
+    # ============= COLLECT MORE DATA (EXPLORING NEW STATES) & RETRAIN NETWORK AT EACH EPISODE ========== #
+    output_file = open(checkpoint_dir+'/results.txt', 'w')
+    n_episodes = FLAGS.n_episodes
+    # Get latest checkpoint of the network
+    print('Loading the latest model')
+    latest = out_dir+'/cp.ckpt' 
 
-# ============= COLLECT MORE DATA (EXPLORING NEW STATES) & RETRAIN NETWORK AT EACH EPISODE ========== #
-output_file = open(checkpoint_dir+'/results.txt', 'w')
-n_episodes = FLAGS.n_episodes
-# Get latest checkpoint of the network
-print('Loading the latest model')
-latest = out_dir+'/cp.ckpt' 
+    # Restore the model from the checkpoint
+    model = create_model(number_filters, length_state, h1=FLAGS.h1, h2=FLAGS.h2,  h3=FLAGS.h3, h4=FLAGS.h4)
+    model.load_weights(latest)
 
-# Restore the model from the checkpoint
-model = create_model(number_filters, length_state, h1=FLAGS.h1, h2=FLAGS.h2,  h3=FLAGS.h3, h4=FLAGS.h4)
-model.load_weights(latest)
+    # buffer for new data
+    buffer_state = []
+    buffer_mask = []
+    buffer_question = []
+    for episode in range(n_episodes):
 
-# buffer for new data
-buffer_state = []
-buffer_mask = []
-buffer_question = []
-for episode in range(n_episodes):
-
-    
-    # Start the imitation learning
-    print("#" * 50)
-    print("# Episode: %d start" % episode)
-    
-    # Sample one target product
-    y = np.random.choice(products_cat["ProductId"].drop_duplicates().values, size=1)[0]
-    
-    # Sample the possible answers for this product:
-    # Creates a dictionary of the form {'q1': [a1], 'q2': [a2, a3], etc.}
-    answers_y = sampler.sample_answers(y, products_cat, p_idk=0.0, p_2a=0.2, p_3a=0.1)
-    
-    # Initialize the state
-    state = {}  
-
-    # Loop until until # products in products set < threshold
-    while True: 
-        # Get list of questions already asked
-        question_asked = state.keys()
         
-        # Convert to one-hot
-        one_ind_questions_asked = dagger_utils.get_index_question(question_asked, filters_def_dict)
+        # Start the imitation learning
+        print("#" * 50)
+        print("# Episode: %d start" % episode)
         
-        # Create the mask before the softmax layer (cannot ask twice the same question)
-        mask = np.ones(number_filters)
-        for q in one_ind_questions_asked:  # If question was already asked, set corresponding mask value to 0
-            mask[q] = 0
+        # Sample one target product
+        y = np.random.choice(products_cat["ProductId"].drop_duplicates().values, size=1)[0]
         
-        # Get one hot state encoding
-        onehot_state = dagger_utils.get_onehot_state(state, filters_def_dict)
+        # Sample the possible answers for this product:
+        # Creates a dictionary of the form {'q1': [a1], 'q2': [a2, a3], etc.}
+        answers_y = sampler.sample_answers(y, products_cat, p_idk=0.0, p_2a=0.2, p_3a=0.1)
+        
+        # Initialize the state
+        state = {}  
 
-        # If not first question, add current mask and state to train data
-        # We do not save the first question because it is always the same (for optimal with no history into account) 
-        if not state == {}:
-            # Get the question that the teacher would have asked given current state
-            q_true, done = dagger_utils.get_next_question_opt(state,
-                                                                products_cat,
-                                                                traffic_cat,
-                                                                purchased_cat,
-                                                                FLAGS.threshold)
-            if done is True:  # stop if (# products < threshold) is True
+        # Loop until until # products in products set < threshold
+        while True: 
+            # Get list of questions already asked
+            question_asked = state.keys()
+            
+            # Convert to one-hot
+            one_ind_questions_asked = dagger_utils.get_index_question(question_asked, filters_def_dict)
+            
+            # Create the mask before the softmax layer (cannot ask twice the same question)
+            mask = np.ones(number_filters)
+            for q in one_ind_questions_asked:  # If question was already asked, set corresponding mask value to 0
+                mask[q] = 0
+            
+            # Get one hot state encoding
+            onehot_state = dagger_utils.get_onehot_state(state, filters_def_dict)
+
+            # If not first question, add current mask and state to train data
+            # We do not save the first question because it is always the same (for optimal with no history into account) 
+            if not state == {}:
+                # Get the question that the teacher would have asked given current state
+                q_true, done = dagger_utils.get_next_question_opt(state,
+                                                                    products_cat,
+                                                                    traffic_cat,
+                                                                    purchased_cat,
+                                                                    FLAGS.threshold)
+                if done is True:  # stop if (# products < threshold) is True
+                    break
+                else: 
+                    # Reshape to be able to concatenate
+                    onehot_state = np.reshape(onehot_state, (1, -1))
+                    mask = np.reshape(mask, (1, -1))
+                    # Append the new state s(t) to the training_set
+                    if buffer_state == []:
+                        buffer_state = onehot_state
+                        buffer_mask = mask
+                    else:
+                        buffer_state = np.concatenate((buffer_state, onehot_state))
+                        buffer_mask = np.concatenate((buffer_mask, mask))
+                    one_ind_question = dagger_utils.get_index_question([q_true], filters_def_dict)[0]
+                    buffer_question = np.append(buffer_question, one_ind_question)
+            
+            onehot_state = np.reshape(onehot_state, (1, -1))
+            mask = np.reshape(mask, (1, -1))
+            # Get predicted question from model for current state
+            probas = model.predict({'main_input': onehot_state, 'mask_input': mask})[0]  # Predict the one-hot label
+            print(probas)
+            if np.sum(probas)==0:
                 break
-            else: 
-                # Reshape to be able to concatenate
-                onehot_state = np.reshape(onehot_state, (1, -1))
-                mask = np.reshape(mask, (1, -1))
-                # Append the new state s(t) to the training_set
-                if buffer_state == []:
-                    buffer_state = onehot_state
-                    buffer_mask = mask
-                else:
-                    buffer_state = np.concatenate((buffer_state, onehot_state))
-                    buffer_mask = np.concatenate((buffer_mask, mask))
-                one_ind_question = dagger_utils.get_index_question([q_true], filters_def_dict)[0]
-                buffer_question = np.append(buffer_question, one_ind_question)
-        
-        onehot_state = np.reshape(onehot_state, (1, -1))
-        mask = np.reshape(mask, (1, -1))
-        # Get predicted question from model for current state
-        probas = model.predict({'main_input': onehot_state, 'mask_input': mask})[0]  # Predict the one-hot label
-        print(probas)
-        if np.sum(probas)==0:
-            break
-        onehot_prediction = np.argmax(probas)
-        q_pred = sorted(filters_def_dict.keys())[onehot_prediction]  # Get the number of predicted next question
-        
-        # Update (answer) state according to that prediction
-        answers_to_pred = answers_y.get(float(q_pred))  # Get answer (from randomly sample product) to chosen question
-        state[q_pred] = list(answers_to_pred)
-        print(state)
+            onehot_prediction = np.argmax(probas)
+            q_pred = sorted(filters_def_dict.keys())[onehot_prediction]  # Get the number of predicted next question
+            
+            # Update (answer) state according to that prediction
+            answers_to_pred = answers_y.get(float(q_pred))  # Get answer (from randomly sample product) to chosen question
+            state[q_pred] = list(answers_to_pred)
+            print(state)
 
-    print("#" * 50)
-    output_file.write('Episode: %02d\t Number or questions: %02d\n' % (episode, len(state)))
-    
-    # Retrain the model with the new data every 200 episodes
-    if (episode % 50==0 and (not episode==0)): #TODO change
-        buffer_state_train, buffer_state_test, buffer_mask_train, buffer_mask_test, buffer_y_train, buffer_y_test = train_test_split(buffer_state,
-                                                                                                                    buffer_mask, 
-                                                                                                                    buffer_question, 
-                                                                                                                    test_size=0.2,
-                                                                                                                    random_state=42)
-        state_train = np.concatenate((buffer_state_train, state_train))
-        state_test = np.concatenate((buffer_state_test, state_test))
-        mask_train = np.concatenate((buffer_mask_train, mask_train))
-        mask_test = np.concatenate((buffer_mask_test, mask_test))
-        y_train = np.concatenate((buffer_y_train, y_train))
-        y_test = np.concatenate((buffer_y_test, y_test))
-        model_history = model.fit([state_train, mask_train],
-                                    y_train,
-                                    epochs=FLAGS.n_epochs,
-                                    batch_size=FLAGS.batch_size,
-                                    shuffle=True,
-                                    validation_data=([state_test, mask_test], y_test),
-                                    verbose=2,
-                                    callbacks=[cp_callback, cp_early])
-        buffer_mask = []
-        buffer_state = []
-        buffer_question = []
-        # New plots
-        model_history_epochs = np.append(model_history_epochs, model_history.epoch)
-        x_breaks.append(len(model_history_epochs))
-        model_history_train_loss = np.append(model_history_train_loss, model_history.history['loss'])
-        model_history_val_loss = np.append(model_history_val_loss, model_history.history['val_loss'])
-        model_history_train_acc = np.append(model_history_train_acc, model_history.history['acc'])
-        model_history_val_acc = np.append(model_history_val_acc, model_history.history['val_acc'])
-        plt.clf()
-        # Loss
-        dagger_utils.plot_history(len(model_history_epochs), 
-                    model_history_val_loss, 
-                    model_history_train_loss, 
-                    x_breaks, 
-                    'Cross-entropy loss', 
-                    filename= checkpoint_dir+"/loss-E{}.png".format(episode))
+        print("#" * 50)
+        output_file.write('Episode: %02d\t Number or questions: %02d\n' % (episode, len(state)))
+        
+        # Retrain the model with the new data every 200 episodes
+        if (episode % 50==0 and (not episode==0)): #TODO change
+            buffer_state_train, buffer_state_test, buffer_mask_train, buffer_mask_test, buffer_y_train, buffer_y_test = train_test_split(buffer_state,
+                                                                                                                        buffer_mask, 
+                                                                                                                        buffer_question, 
+                                                                                                                        test_size=0.2,
+                                                                                                                        random_state=42)
+            state_train = np.concatenate((buffer_state_train, state_train))
+            state_test = np.concatenate((buffer_state_test, state_test))
+            mask_train = np.concatenate((buffer_mask_train, mask_train))
+            mask_test = np.concatenate((buffer_mask_test, mask_test))
+            y_train = np.concatenate((buffer_y_train, y_train))
+            y_test = np.concatenate((buffer_y_test, y_test))
+            model_history = model.fit([state_train, mask_train],
+                                        y_train,
+                                        epochs=FLAGS.n_epochs,
+                                        batch_size=FLAGS.batch_size,
+                                        shuffle=True,
+                                        validation_data=([state_test, mask_test], y_test),
+                                        verbose=2,
+                                        callbacks=[cp_callback, cp_early])
+            buffer_mask = []
+            buffer_state = []
+            buffer_question = []
+            # New plots
+            model_history_epochs = np.append(model_history_epochs, model_history.epoch)
+            x_breaks.append(len(model_history_epochs))
+            model_history_train_loss = np.append(model_history_train_loss, model_history.history['loss'])
+            model_history_val_loss = np.append(model_history_val_loss, model_history.history['val_loss'])
+            model_history_train_acc = np.append(model_history_train_acc, model_history.history['acc'])
+            model_history_val_acc = np.append(model_history_val_acc, model_history.history['val_acc'])
+            plt.clf()
+            # Loss
+            dagger_utils.plot_history(len(model_history_epochs), 
+                        model_history_val_loss, 
+                        model_history_train_loss, 
+                        x_breaks, 
+                        'Cross-entropy loss', 
+                        filename= checkpoint_dir+"/loss-E{}.png".format(episode))
 
-        # Accuracy
-        dagger_utils.plot_history(len(model_history_epochs), 
-                    model_history_val_acc, 
-                    model_history_train_acc, 
-                    x_breaks, 
-                    'Accuracy', 
-                    filename= checkpoint_dir+"/acc-E{}.png".format(episode))
-        # Get latest checkpoint of the network
-        print('Loading the updated model')
-        latest = out_dir+'/cp.ckpt' 
-        model = create_model(number_filters, length_state, h1=FLAGS.h1, h2=FLAGS.h2,  h3=FLAGS.h3, h4=FLAGS.h4)
-        model.load_weights(latest)
+            # Accuracy
+            dagger_utils.plot_history(len(model_history_epochs), 
+                        model_history_val_acc, 
+                        model_history_train_acc, 
+                        x_breaks, 
+                        'Accuracy', 
+                        filename= checkpoint_dir+"/acc-E{}.png".format(episode))
+            # Get latest checkpoint of the network
+            print('Loading the updated model')
+            latest = out_dir+'/cp.ckpt' 
+            model = create_model(number_filters, length_state, h1=FLAGS.h1, h2=FLAGS.h2,  h3=FLAGS.h3, h4=FLAGS.h4)
+            model.load_weights(latest)
 
 
 
