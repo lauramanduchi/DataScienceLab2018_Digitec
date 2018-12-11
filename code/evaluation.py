@@ -166,7 +166,7 @@ else:
     print('Loading the latest model from {}'.format(checkpoint_model))
     length_state = len(dagger_utils.get_onehot_state({}, filters_def_dict))
     number_filters = len(filters_def_dict.keys())
-    model = create_model(number_filters, length_state, h1=128, h2=122)
+    model = create_model(number_filters, length_state)
     model.load_weights(checkpoint_model)
 
 # ============= MAIN EVALUATION LOOP =============== #
