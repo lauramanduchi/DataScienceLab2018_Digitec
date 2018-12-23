@@ -1,10 +1,10 @@
-# Improving Shopping Experience at Galaxus-Digitec
+# Improving Shopping Experience at Digitec-Galaxus
 ## Data Science Lab - Fall 2018 - ETH Zurich
 ### Mélanie Bernhardt - Mélanie Gaillochet - Laura Manduchi
 
 ## Overview of the project
 ### Main goal
-The goal of this project is to provide clients of Digitec/Galaxus with a reduced set of products that fits their criteria as fast as possible, by choosing the best sequence of questions/filters to ask.
+The goal of this project is to provide clients of Digitec Galaxus with a reduced set of products that fits their criteria as fast as possible, by choosing the best sequence of questions to ask.
 ### Context
 Currently online: the user can filter out products using up to 27 different filters. This not very convenient for the user. 
 We want to find a more interactive solution: ask questions to the user in order to help him/her restrict the set of products available according to his/her needs. We ask one question at a time. At each timestep, the user gives an answer and the next question is determined accordingly. The procedure stops when the set of remaining products is smaller than a certain threshold (currently 50 products). 
