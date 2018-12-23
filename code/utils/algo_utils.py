@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+""" Data Science Lab Project - FALL 2018
+Mélanie Bernhardt - Mélanie Gaillochet - Laura Manduchi
+
+This file defines all the helper functions for the maxMI algorithm.
+"""
+
 import sys
 import os.path
 # To import from sibling directory ../utils
@@ -7,6 +14,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 
 import pandas as pd
 import numpy as np
+
 from utils.build_answers_utils import question_id_to_text
 
 
@@ -143,9 +151,11 @@ def get_proba_Q_distribution(question_list, df_history, alpha):
     Q_proba = np.ones(n)/n
     # Step 2: taking into account history
     for i in range(n):
-        q_id = str(int(float(question_list[i])))
+        q_id = int(float(question_list[i]))
         try:
-            Q_proba[i] += alpha * df_history["frequency"].loc[df_history["questionId"] == q_id].values[0]
+            Q_proba[i] += alpha * df_history.loc[df_history["questionId"]== str(q_id), "frequency"].values[0]      
+        except TypeError:
+            Q_proba[i] += alpha * df_history.loc[df_history["questionId"] == q_id, "frequency"].values[0]
         except IndexError:
             pass
     # Step 3: renormalizing
@@ -205,89 +215,3 @@ def get_proba_A_distribution_none(question, products_cat, traffic_processed, alp
     #step 5: renormalize everything
     distribution["final_proba"] = distribution["final_proba"]/distribution["final_proba"].sum()
     return(distribution)
-
-
-
-if __name__ == "__main__":
-    from utils.load_utils import *
-    from utils.init_dataframes import init_df
-    import utils.algo_utils as algo_utils
-    from utils.build_answers_utils import question_id_to_text, answer_id_to_text
-    from utils.sampler import sample_answers
-    import time 
-
-    # Uploading tables
-    try:
-        products_cat = load_obj('../data/products_table')
-        traffic_cat = load_obj('../data/traffic_table')
-        purchased_cat = load_obj('../data/purchased_table')
-        question_text_df = load_obj('../data/question_text_df')
-        answer_text_df = load_obj('../data/answer_text')
-        print("Loaded datsets")
-    except:
-        print("Creating datasets...")
-        products_cat, traffic_cat, purchased_cat, filters_def_dict, type_filters, question_text_df, answer_text = init_df()
-        save_obj(products_cat, '../data/products_table')
-        save_obj(traffic_cat, '../data/traffic_table')
-        save_obj(purchased_cat, '../data/purchased_table')
-        save_obj(filters_def_dict, '../data/filters_def_dict')
-        save_obj(type_filters, '../data/type_filters')
-        save_obj(question_text_df, '../data/question_text_df')
-        save_obj(answer_text, '../data/answer_text')
-        print("Created datasets")
-
-    # Uploading history from traffic_cat
-    try:
-        df_history = load_obj('../data/df_history')
-    except:
-        df_history = algo_utils.create_history(traffic_cat, question_text_df)
-        save_obj(df_history, '../data/df_history')
-        print("Created history")
-
-    # Sample a product
-    y = products_cat["ProductId"][20]
-    answers_y = sample_answers(y, products_cat)
-    threshold = 50
-    start_time = time.time()
-    get_answers_y(y, products_cat)
-    print ('new took {}'.format(time.time()-start_time))
-    start_time = time.time()
-    get_answers_y_old(y, products_cat)
-    print ('old took {}'.format(time.time()-start_time))
-    start_time = time.time()
-    #dict = get_answers_y(y, products_cat)
-    new,_,_ = select_subset(products_cat, traffic_cat, 11280, [3600000000.0], purchased_cat)
-    print ('new took {}'.format(time.time()-start_time))
-    #dict = get_answers_y(y, products_cat)
-    #print(dict)
-    start_time = time.time()
-    old,_,_ = select_subset_old(products_cat, traffic_cat, 11280, [3600000000.0], purchased_cat)
-    print ('old took {}'.format(time.time()-start_time))
-    print(set(old["ProductId"]) == set(new["ProductId"])) 
-    print(len(old)==len(new))
-
-"""
-    start_time = time.time()
-    #dict = get_answers_y(y, products_cat)
-    new = get_proba_Q_distribution(df_history["questionId"], df_history, alpha=2)
-    print ('new took {}'.format(time.time()-start_time))
-    start_time = time.time()
-    #dict = get_answers_y(y, products_cat)
-    old = get_proba_Q_distribution_old(df_history["questionId"], df_history, alpha=2)
-    print ('old took {}'.format(time.time()-start_time))
-    print(old==new)
-
-    start_time = time.time()
-    #dict = get_answers_y(y, products_cat)
-    new = get_proba_A_distribution_none_old(11280, products_cat, traffic_cat, alpha=1)
-    print ('old took {}'.format(time.time()-start_time))
-    start_time = time.time()
-    #dict = get_answers_y(y, products_cat)
-    old = get_proba_A_distribution_none(11280, products_cat, traffic_cat, alpha=1)
-    print ('new took {}'.format(time.time()-start_time))
-    print(old-new)
-"""
-    
-    
-
-

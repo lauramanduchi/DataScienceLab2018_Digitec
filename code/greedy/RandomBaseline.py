@@ -1,3 +1,8 @@
+""" Data Science Lab Project - FALL 2018
+Mélanie Bernhardt - Mélanie Gaillochet - Laura Manduchi
+
+This file defines the randome baseline used in evaluation.
+"""
 import sys
 import os.path
 # To import from sibling directory ../utils
@@ -14,7 +19,9 @@ import utils.build_answers_utils as build_answers_utils
 import utils.sampler as sampler
 
 
-def random_baseline(product_set, traffic_set, purchased_set, question_text_df, answer_text_df, threshold, y, answers_y):
+def random_baseline(product_set, traffic_set, purchased_set, 
+                    question_text_df, answer_text_df,
+                    threshold, y, answers_y):
     """Random baseline algorithm.
     Note: 
         at each timestep sample randomly one question among the remaining questions.
@@ -32,7 +39,7 @@ def random_baseline(product_set, traffic_set, purchased_set, question_text_df, a
     Returns:
         final_question_list: final list of asked questionsIds
         product_set: final set of selected products
-        y: target product #TODO check if needed
+        y: target product
         final_question_text_list: final list of asked question (string)
         answer_text_list: final list of given answers (as string)
     """
@@ -54,20 +61,22 @@ def random_baseline(product_set, traffic_set, purchased_set, question_text_df, a
         answer_text = build_answers_utils.answer_id_to_text(answer, next_question, answer_text_df)
         print("RDM: Answer given was: {}".format(answer))
         print("RDM: Answer was: {}".format(answer_text))
-        product_set, traffic_set, purchased_set = algo_utils.select_subset(question=int(next_question), \
-                                                                            answer=answer, \
-                                                                            product_set=product_set, \
-                                                                            traffic_set=traffic_set, \
-                                                                            purchased_set = purchased_set)
+        product_set, traffic_set, purchased_set = algo_utils.select_subset(
+                                                        question=int(next_question),
+                                                        answer=answer,
+                                                        product_set=product_set,
+                                                        traffic_set=traffic_set,
+                                                        purchased_set = purchased_set)
         question_set_new = set(product_set["PropertyDefinitionId"].values) 
         question_set = question_set_new.difference(final_question_list)
-        distinct_products = len(product_set.ProductId.unique()) # faster
+        distinct_products = len(product_set.ProductId.unique())
         print('RDM: There are still {} products to choose from'.format(distinct_products))
     return final_question_list, product_set, y, final_question_text_list, answer_text_list
 
 
 
 if __name__=='__main__':
+    """ Just for testing purposes; """
     try:
         products_cat = load_obj('../data/products_table')
         traffic_cat = load_obj('../data/traffic_table')

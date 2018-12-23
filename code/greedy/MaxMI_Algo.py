@@ -1,3 +1,10 @@
+""" Data Science Lab Project - FALL 2018
+Mélanie Bernhardt - Mélanie Gaillochet - Laura Manduchi
+
+This modules defines the greedy algorithm based on
+maximzing the Mutual information.
+"""
+
 import sys
 import os.path
 # To import from sibling directory ../utils
@@ -20,10 +27,6 @@ from utils.sampler import sample_answers
 # To remove future warning from being printed out
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-# About parmap
-# y = [myfunction(x, argument1, mykeyword=argument2) for x in mylist]
-# In parallel:
-# y = parmap.map(myfunction, mylist, argument1, mykeyword=argument2)
 
 
 def conditional_entropy(answer, question, product_set, traffic_set, purchased_set):
@@ -57,14 +60,25 @@ def mutual_inf(question, product_set, traffic_set, purchased_set):
     """Compute mutual information for a given question:
         Args:
             question: question considered for computing mutual info
-            product_set: product table [ProductId	BrandId	ProductTypeId	PropertyValue	PropertyDefinitionId	PropertyDefinitionOptionId	answer]
-            traffic_set: traffic table [SessionId	answers_selected	Items_ProductId]
-            purchased_set: purchased table [	ProductId	UserId	OrderId	SessionId	Items_ProductId	Items_ItemCount]
+            product_set: product table [ProductId, 
+                                        BrandId, 
+                                        ProductTypeId, 
+                                        PropertyValue,
+                                        PropertyDefinitionId, 
+                                        PropertyDefinitionOptionId,
+                                        answer]
+            traffic_set: traffic table [SessionId, 
+                                        answers_selected,
+                                        Items_ProductId]
+            purchased_set: purchased table [ProductId,
+                                            UserId,
+                                            OrderId,
+                                            SessionId,
+                                            Items_ProductId,
+                                            Items_ItemCount]
         Returns:
             short_mutual_info: mutual info for that given question
          """
-    "speed-up: from 1.5 to 1.3 for each call of mutual inf"
-
     proba_A = algo_utils.get_proba_A_distribution_none(question, product_set, traffic_set, alpha=1)["final_proba"]
     possible_answers = proba_A.index
     short_mutual_info = proba_A.loc[possible_answers]
@@ -77,20 +91,28 @@ def opt_step(question_set, product_set, traffic_set, purchased_set, a_hist = 0, 
     """Maximal mutual information greedy step to select the best questions to ask given the history:
     Args:
         question_set: set of questions already asked
-        product_set: product table [ProductId	BrandId	ProductTypeId	PropertyValue	PropertyDefinitionId	PropertyDefinitionOptionId	answer]
-        traffic_set: traffic table [SessionId	answers_selected	Items_ProductId]
-        purchased_set: purchased table [	ProductId	UserId	OrderId	SessionId	Items_ProductId	Items_ItemCount]
-        a_hist: (default = 0) parameter to determine the importance of history filters, the higher the more important history is. 0 means no history
-        df_history (default = 0): history table obtained with algo_utils.create_history(traffic_cat, question_text_df)
-                                  [ProductId	text	frequency]
+        product_set: product table [ProductId, BrandId,
+                                    ProductTypeId, PropertyValue,
+                                    PropertyDefinitionId, 
+                                    PropertyDefinitionOptionId, answer]
+        traffic_set: traffic table [SessionId, 
+                                    answers_selected,
+                                    Items_ProductId]
+        purchased_set: purchased table [ProductId, UserId,
+                                        OrderId, SessionId,
+                                        Items_ProductId, Items_ItemCount]
+        a_hist: (default = 0) parameter to determine the importance of history filters, 
+                              the higher the more important history is. 0 means no history
+        df_history (default = 0): history table [ProductId, text, frequency]
+    
     Returns:
         next_question: questionId to ask
      """
     MI_matrix = np.zeros([len(question_set), 2])
-    mutual_array = np.asarray(parmap.map(mutual_inf, \
-                                        question_set, \
-                                        product_set=product_set, \
-                                        traffic_set=traffic_set, \
+    mutual_array = np.asarray(parmap.map(mutual_inf,
+                                        question_set,
+                                        product_set=product_set,
+                                        traffic_set=traffic_set,
                                         purchased_set=purchased_set,
                                         pm_pbar=True,
                                         pm_parallel=True,
@@ -110,25 +132,33 @@ def opt_step(question_set, product_set, traffic_set, purchased_set, a_hist = 0, 
     return int(next_question)
 
 
-def max_info_algorithm(product_set, traffic_set, purchased_set, \
-                       question_text_df, answer_text_df, threshold, \
-                       y, answers_y, a_hist = 1, df_history = 0, \
+def max_info_algorithm(product_set, traffic_set, purchased_set,
+                       question_text_df, answer_text_df, threshold,
+                       y, answers_y, a_hist = 1, df_history = 0,
                        first_questions = None):
     """Maximan mutual information algorithm to select the best subset of questions to ask:
     Args:
-        product_set: product table [ProductId	BrandId	ProductTypeId	PropertyValue	PropertyDefinitionId	PropertyDefinitionOptionId	answer]
-        traffic_set: traffic table [SessionId	answers_selected	Items_ProductId]
-        purchased_set: purchased table [	ProductId	UserId	OrderId	SessionId	Items_ProductId	Items_ItemCount]
-        question_text_df: table to link questionId to text [PropertyDefinition	PropertyDefinitionId]
-        answer_text_df: table to link answerId to text [answer_id	question_id	answer_text]
+        product_set: product table [ProductId, BrandId,
+                                    ProductTypeId, PropertyValue,
+                                    PropertyDefinitionId, 
+                                    PropertyDefinitionOptionId, answer]
+        traffic_set: traffic table [SessionId, answers_selected, 
+                                    Items_ProductId]
+        purchased_set: purchased table [ProductId, UserId, 
+                                        OrderId, SessionId,
+                                        Items_ProductId, Items_ItemCount]
+        question_text_df: table to link questionId to text [PropertyDefinition,
+                                                            PropertyDefinitionId]
+        answer_text_df: table to link answerId to text [answer_id,
+                                                        question_id,
+                                                        answer_text]
         threshold: max length of final set of products
         y: product selected for the algorithm
-        answers_y: dict of question: np.array(answers), obtained with function: sample_answers(y, products_cat)
-        a_hist (default = 0): parameter to determine the importance of history filters, the higher the more important history is. 0 means no history
-        df_history (default = 0): history table obtained with algo_utils.create_history(traffic_cat, question_text_df)
-                                  [ProductId	text	frequency]
-
+        answers_y: dict of question: np.array(answers)
+        a_hist (default = 0): parameter to determine the importance of history filters
+        df_history (default = 0): history table [ProductId, text, frequency]
         first_questions (default = None): optimization step, precompute the firsts questions, create new if there are none
+    
     Returns:
         final_question_list: sequence of questionId to ask
         product_set: final product list
@@ -152,11 +182,17 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, \
         n_first_q = 3 
         print("Optimization: computing first {} questions".format(n_first_q))
         for i in range(n_first_q):
-            first_question = opt_step(first_question_set, product_set, traffic_set, purchased_set, a_hist, df_history)
+            first_question = opt_step(first_question_set, 
+                                      product_set,
+                                      traffic_set,
+                                      purchased_set,
+                                      a_hist,
+                                      df_history)
             first_questions.append(first_question)
             first_question_set = first_question_set.difference(set(first_questions))
 
-    # Given we have the first 3 best questions for IDK answer we can use them until we receive a different answer
+    # Given we have the first 3 best questions for IDK answer 
+    # we can use them until we receive a different answer
     n_first_q = len(first_questions)
     idk = True
     i = 0
@@ -175,7 +211,12 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, \
         print("Answer given was: {}".format(answer))
         print("Answer was: {}".format(answer_text))
         answer_text_list.append(answer_text)
-        product_set, traffic_set, purchased_set = algo_utils.select_subset(question=next_question, answer=answer, product_set=product_set, traffic_set =traffic_set, purchased_set = purchased_set)
+        product_set, traffic_set, purchased_set = algo_utils.select_subset(
+                                                    question=next_question,
+                                                    answer=answer,
+                                                    product_set=product_set,
+                                                    traffic_set =traffic_set,
+                                                    purchased_set = purchased_set)
         question_set_new = set(product_set["PropertyDefinitionId"].values)
         question_set = question_set_new.difference(final_question_list)
         distinct_products = len(product_set.ProductId.unique()) # faster
@@ -185,7 +226,12 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, \
 
     # Perform greedy step until the subset of products is smaller than a certain threshold
     while not (distinct_products < threshold or len(question_set) == 0):
-        next_question = opt_step(question_set, product_set, traffic_set, purchased_set, a_hist, df_history)
+        next_question = opt_step(question_set,
+                                product_set,
+                                traffic_set,
+                                purchased_set,
+                                a_hist,
+                                df_history)
         print("Next question is filter : {}".format(next_question))
         question_text = question_id_to_text(next_question, question_text_df)
         print("Question is: {}".format(question_text))
@@ -196,7 +242,12 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, \
         print("Answer given was: {}".format(answer))
         print("Answer was: {}".format(answer_text))
         answer_text_list.append(answer_text)    
-        product_set, traffic_set, purchased_set = algo_utils.select_subset(question=next_question, answer=answer, product_set=product_set, traffic_set =traffic_set, purchased_set = purchased_set)
+        product_set, traffic_set, purchased_set = algo_utils.select_subset(
+                                                    question=next_question,
+                                                    answer=answer,
+                                                    product_set=product_set,
+                                                    traffic_set =traffic_set,
+                                                    purchased_set = purchased_set)
         question_set_new = set(product_set["PropertyDefinitionId"].values) 
         question_set = question_set_new.difference(final_question_list)
         distinct_products = len(product_set.ProductId.unique()) # faster
@@ -207,7 +258,9 @@ def max_info_algorithm(product_set, traffic_set, purchased_set, \
 
 
 if __name__=='__main__':
-
+    """
+    Just for testing purposes
+    """
     # Upload all the data tables
     try:
         products_cat = load_obj('../data/products_table')
@@ -216,23 +269,12 @@ if __name__=='__main__':
         question_text_df = load_obj('../data/question_text_df')
         answer_text_df = load_obj('../data/answer_text')
         print("Loaded datsets")
-    # Download all the data tables
     except:
-        print("Creating datasets...")
-        products_cat, traffic_cat, purchased_cat, filters_def_dict, type_filters, question_text_df, answer_text = init_df()
-        save_obj(products_cat, '../data/products_table')
-        save_obj(traffic_cat, '../data/traffic_table')
-        save_obj(purchased_cat, '../data/purchased_table')
-        save_obj(filters_def_dict, '../data/filters_def_dict')
-        save_obj(type_filters, '../data/type_filters')
-        save_obj(question_text_df, '../data/question_text_df')
-        save_obj(answer_text, '../data/answer_text')
-        print("Created datasets")
+        print("The dataset is not found...")
 
     # Upload history of filters used from traffic_cat
     try:
         df_history = load_obj('../data/df_history')
-    # Download history from traffic_cat
     except:
         df_history = algo_utils.create_history(traffic_cat, question_text_df)
         save_obj(df_history, '../data/df_history')
@@ -244,15 +286,15 @@ if __name__=='__main__':
     threshold = 50
     start_time = time.time()
     print("Start time: {}".format(start_time))
-    # algorithm
-    final_question_list, product_set, y, final_question_text_list, answer_text_list = max_info_algorithm(products_cat, \
-                                                                                                         traffic_cat, \
-                                                                                                         purchased_cat, \
-                                                                                                         question_text_df, \
-                                                                                                         answer_text_df, \
-                                                                                                         threshold, y, \
-                                                                                                         answers_y, \
-                                                                                                         a_hist = 1, \
+    # Call the algorithm
+    final_question_list, product_set, y, final_question_text_list, answer_text_list = max_info_algorithm(products_cat,
+                                                                                                         traffic_cat,
+                                                                                                         purchased_cat,
+                                                                                                         question_text_df,
+                                                                                                         answer_text_df,
+                                                                                                         threshold, y,
+                                                                                                         answers_y,
+                                                                                                         a_hist = 1,
                                                                                                          df_history = df_history)
     end_time = time.time()
     print("final_question_list: ", final_question_list)

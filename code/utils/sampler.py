@@ -1,14 +1,21 @@
-import numpy as np
-import pandas as pd
 
-import random
-import os
-from utils.load_utils import *
-import utils.algo_utils as algo_utils
+""" Data Science Lab Project - FALL 2018
+Mélanie Bernhardt - Mélanie Gaillochet - Laura Manduchi
 
-""" 
 This file defines the answer sampler.
 """
+import random
+import os
+import numpy as np
+import pandas as pd
+import sys
+import os.path
+# To import from sibling directory ../utils
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
+import utils.algo_utils as algo_utils
+from utils.load_utils import load_obj, save_obj
+
 
 def get_all_answers(question, product_set):
     """ Returns all possible answers to a given questions.

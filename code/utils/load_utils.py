@@ -1,8 +1,9 @@
-import pickle as pkl
+""" Data Science Lab Project - FALL 2018
+Mélanie Bernhardt - Mélanie Gaillochet - Laura Manduchi
 
-"""
 This module defines helper functions to load, save and batch data.
 """
+import pickle as pkl
 
 def save_obj(obj, name):
     """ 
