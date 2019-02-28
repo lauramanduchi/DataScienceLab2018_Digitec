@@ -4,7 +4,7 @@
 
 ## Overview of the project
 ### Main goal
-The goal of this project is to provide clients of Digitec Galaxus with a reduced set of products that fits their criteria as fast as possible, by choosing the best sequence of questions to ask.
+The goal of this project is to provide clients of Digitec Galaxus with a reduced set of products that fits their criteria as fast as possible, by choosing the best sequence of questions to ask. To achieve this goal, we implemented a greedy algorithm that selects the best question to ask next by maximizing the mutual information between the product and the question at each step. Since this algorithm was computationally very expensive, we increased the computational speed of our system by using the Imitation Learning procedure.
 ### Context
 Currently online: the user can filter out products using up to 27 different filters. This not very convenient for the user. 
 We want to find a more interactive solution: ask questions to the user in order to help him/her restrict the set of products available according to his/her needs. We ask one question at a time. At each timestep, the user gives an answer and the next question is determined accordingly. The procedure stops when the set of remaining products is smaller than a certain threshold (currently 50 products). 
